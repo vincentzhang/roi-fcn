@@ -22,10 +22,10 @@ layer {
 	type: "Convolution"
 	bottom: "data"
 	top: "conv1"
-  param { lr_mult: 0 decay_mult: 0 }
-  param { lr_mult: 0 decay_mult: 0 }
+  param { lr_mult: 1 decay_mult: 1 }
+  param { lr_mult: 2 decay_mult: 0 }
 	convolution_param {
-		num_output: 96
+                num_output: 96
 		kernel_size: 7
 		pad: 3
 		stride: 2
@@ -67,8 +67,8 @@ layer {
 	type: "Convolution"
 	bottom: "pool1"
 	top: "conv2"
-  param { lr_mult: 0 decay_mult: 0 }
-  param { lr_mult: 0 decay_mult: 0 }
+  param { lr_mult: 1 decay_mult: 1 }
+  param { lr_mult: 2 decay_mult: 0 }
 	convolution_param {
 		num_output: 256
 		kernel_size: 5
@@ -112,8 +112,8 @@ layer {
 	type: "Convolution"
 	bottom: "pool2"
 	top: "conv3"
-  param { lr_mult: 0 decay_mult: 0 }
-  param { lr_mult: 0 decay_mult: 0 }
+  param { lr_mult: 1 decay_mult: 1 }
+  param { lr_mult: 2 decay_mult: 0 }
 	convolution_param {
 		num_output: 384
 		kernel_size: 3
@@ -132,8 +132,8 @@ layer {
 	type: "Convolution"
 	bottom: "conv3"
 	top: "conv4"
-  param { lr_mult: 0 decay_mult: 0 }
-  param { lr_mult: 0 decay_mult: 0 }
+  param { lr_mult: 1 decay_mult: 1 }
+  param { lr_mult: 2 decay_mult: 0 }
 	convolution_param {
 		num_output: 384
 		kernel_size: 3
@@ -152,8 +152,8 @@ layer {
 	type: "Convolution"
 	bottom: "conv4"
 	top: "conv5"
-  param { lr_mult: 0 decay_mult: 0 }
-  param { lr_mult: 0 decay_mult: 0 }
+  param { lr_mult: 1 decay_mult: 1 }
+  param { lr_mult: 2 decay_mult: 0 }
 	convolution_param {
 		num_output: 256
 		kernel_size: 3
@@ -307,8 +307,8 @@ layer {
   type: "Convolution"
   bottom: "conv5"
   top: "rpn_conv1"
-  param { lr_mult: 0 decay_mult: 0 }
-  param { lr_mult: 0 decay_mult: 0 }
+  param { lr_mult: 1 decay_mult: 1 }
+  param { lr_mult: 2 decay_mult: 0 }
   convolution_param {
     num_output: 256
     kernel_size: 3 pad: 1 stride: 1
@@ -327,8 +327,8 @@ layer {
   type: "Convolution"
   bottom: "rpn_conv1"
   top: "rpn_cls_score"
-  param { lr_mult: 0 decay_mult: 0 }
-  param { lr_mult: 0 decay_mult: 0 }
+  param { lr_mult: 1 decay_mult: 1 }
+  param { lr_mult: 2 decay_mult: 0 }
   convolution_param {
     num_output: 18   # 2(bg/fg) * 9(anchors)
     kernel_size: 1 pad: 0 stride: 1
@@ -341,8 +341,8 @@ layer {
   type: "Convolution"
   bottom: "rpn_conv1"
   top: "rpn_bbox_pred"
-  param { lr_mult: 0 decay_mult: 0 }
-  param { lr_mult: 0 decay_mult: 0 }
+  param { lr_mult: 1 decay_mult: 1 }
+  param { lr_mult: 2 decay_mult: 0 }
   convolution_param {
     num_output: 36   # 4 * 9(anchors)
     kernel_size: 1 pad: 0 stride: 1

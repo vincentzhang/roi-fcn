@@ -1,4 +1,4 @@
-EXP_DIR: faster_rcnn_alt_opt
+EXP_DIR: finetune_all_layers_alt_opt #learn_from_scratch_alt_opt #faster_rcnn_alt_opt
 TRAIN:
   BG_THRESH_LO: 0.0
 TEST:

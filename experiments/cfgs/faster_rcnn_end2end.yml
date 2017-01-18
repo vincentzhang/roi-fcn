@@ -1,4 +1,4 @@
-EXP_DIR: faster_rcnn_end2end
+EXP_DIR: learn_from_scratch_faster_rcnn_end2end #finetune_faster_cnn_end2end   #faster_rcnn_end2end
 TRAIN:
   HAS_RPN: True
   IMS_PER_BATCH: 1

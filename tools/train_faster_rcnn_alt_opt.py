@@ -76,6 +76,8 @@ def get_solvers(net_name):
                [net_name, n, 'stage2_rpn_solver60k80k.pt'],
                [net_name, n, 'stage2_fast_rcnn_solver30k40k.pt']]
     solvers = [os.path.join(cfg.MODELS_DIR, *s) for s in solvers]
+    import pdb
+    #pdb.set_trace()
     # Iterations for each training stage
     max_iters = [80000, 40000, 80000, 40000]
     # max_iters = [100, 100, 100, 100]
@@ -311,6 +313,16 @@ if __name__ == '__main__':
     print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
 
     cfg.TRAIN.SNAPSHOT_INFIX = 'stage2'
+    #init_model='/data/repo/py-faster-rcnn/output/learn_from_scratch_alt_opt/voc_2007_trainval/zf_rpn_stage2_iter_80000.caffemodel'
+    #rpn_file='/data/repo/py-faster-rcnn/output/learn_from_scratch_alt_opt/voc_2007_trainval/zf_rpn_stage2_iter_80000_proposals.pkl'
+    #mp_kwargs = dict(
+    #        queue=mp_queue,
+    #        imdb_name=args.imdb_name,
+    #        init_model=init_model,
+    #        solver=solvers[3],
+    #        max_iters=max_iters[3],
+    #        cfg=cfg,
+    #        rpn_file=rpn_file)
     mp_kwargs = dict(
             queue=mp_queue,
             imdb_name=args.imdb_name,

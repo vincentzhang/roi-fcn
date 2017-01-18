@@ -12,6 +12,7 @@ Demo script showing detections in sample images.
 
 See README.md for installation instructions before running.
 """
+import pdb
 
 import _init_paths
 from fast_rcnn.config import cfg
@@ -68,12 +69,13 @@ def vis_detections(im, class_name, dets, thresh=0.5):
     plt.axis('off')
     plt.tight_layout()
     plt.draw()
+    fig.hold(True)
 
 def demo(net, image_name):
     """Detect object classes in an image using pre-computed object proposals."""
 
     # Load the demo image
-    im_file = os.path.join(cfg.DATA_DIR, 'demo', image_name)
+    im_file = os.path.join(cfg.DATA_DIR, 'demo/mydet', image_name)
     im = cv2.imread(im_file)
 
     # Detect all object classes and regress object bounds
@@ -86,15 +88,18 @@ def demo(net, image_name):
 
     # Visualize detections for each class
     CONF_THRESH = 0.8
-    NMS_THRESH = 0.3
+    NMS_THRESH = 0.1
+    #pdb.set_trace()
+    #plt.figure()
     for cls_ind, cls in enumerate(CLASSES[1:]):
         cls_ind += 1 # because we skipped background
         cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
         cls_scores = scores[:, cls_ind]
         dets = np.hstack((cls_boxes,
                           cls_scores[:, np.newaxis])).astype(np.float32)
-        keep = nms(dets, NMS_THRESH)
-        dets = dets[keep, :]
+        keep = nms(dets, NMS_THRESH) # list of indices of the proposals that
+        # contain scores > NMS_THRESH
+        dets = dets[keep, :] # dets[:,:4]: bboxes; dets[-1]: score
         vis_detections(im, cls, dets, thresh=CONF_THRESH)
 
 def parse_args():
@@ -117,6 +122,7 @@ if __name__ == '__main__':
 
     args = parse_args()
 
+    #pdb.set_trace()
     prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
                             'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
     caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models',
@@ -141,8 +147,10 @@ if __name__ == '__main__':
     for i in xrange(2):
         _, _= im_detect(net, im)
 
-    im_names = ['000456.jpg', '000542.jpg', '001150.jpg',
-                '001763.jpg', '004545.jpg']
+    #im_names = ['000456.jpg', '000542.jpg', '001150.jpg',
+    #            '001763.jpg', '004545.jpg']
+    im_names = ['000004.jpg', '000014.jpg', '000025.jpg', '000062.jpg',
+    '000069.jpg', '000176.jpg']
     for im_name in im_names:
         print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
         print 'Demo for data/demo/{}'.format(im_name)

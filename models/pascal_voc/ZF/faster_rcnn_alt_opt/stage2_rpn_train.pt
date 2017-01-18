@@ -282,8 +282,8 @@ layer {
   type: "InnerProduct"
   bottom: "dummy_roi_pool_conv5"
   top: "fc6"
-  param { lr_mult: 0 decay_mult: 0 }
-  param { lr_mult: 0 decay_mult: 0 }
+  param { lr_mult: 1 decay_mult: 1 }
+  param { lr_mult: 2 decay_mult: 0 }
   inner_product_param {
     num_output: 4096
   }
@@ -299,8 +299,8 @@ layer {
   type: "InnerProduct"
   bottom: "fc6"
   top: "fc7"
-  param { lr_mult: 0 decay_mult: 0 }
-  param { lr_mult: 0 decay_mult: 0 }
+  param { lr_mult: 1 decay_mult: 1 }
+  param { lr_mult: 2 decay_mult: 0 }
   inner_product_param {
     num_output: 4096
   }
