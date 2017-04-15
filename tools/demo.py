@@ -12,18 +12,22 @@ Demo script showing detections in sample images.
 
 See README.md for installation instructions before running.
 """
-import pdb
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+import ipdb
 
 import _init_paths
 from fast_rcnn.config import cfg
 from fast_rcnn.test import im_detect
 from fast_rcnn.nms_wrapper import nms
 from utils.timer import Timer
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 import caffe, os, sys, cv2
 import argparse
+import time
 
 CLASSES = ('__background__',
            'aeroplane', 'bicycle', 'bird', 'boat',
@@ -68,8 +72,9 @@ def vis_detections(im, class_name, dets, thresh=0.5):
                   fontsize=14)
     plt.axis('off')
     plt.tight_layout()
-    plt.draw()
-    fig.hold(True)
+    plt.savefig('{}-{}-{}-{}.png'.format(class_name, score, thresh, int(time.time())), bbox_inches='tight')
+    #plt.draw()
+    #fig.hold(True)
 
 def demo(net, image_name):
     """Detect object classes in an image using pre-computed object proposals."""
@@ -118,11 +123,11 @@ def parse_args():
     return args
 
 if __name__ == '__main__':
+    ipdb.set_trace()
     cfg.TEST.HAS_RPN = True  # Use RPN for proposals
 
     args = parse_args()
 
-    #pdb.set_trace()
     prototxt = os.path.join(cfg.MODELS_DIR, NETS[args.demo_net][0],
                             'faster_rcnn_alt_opt', 'faster_rcnn_test.pt')
     caffemodel = os.path.join(cfg.DATA_DIR, 'faster_rcnn_models',

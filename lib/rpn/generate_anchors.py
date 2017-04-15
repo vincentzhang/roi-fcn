@@ -42,7 +42,9 @@ def generate_anchors(base_size=16, ratios=[0.5, 1, 2],
     """
 
     base_anchor = np.array([1, 1, base_size, base_size]) - 1
+    # create anchors for each aspect ratio
     ratio_anchors = _ratio_enum(base_anchor, ratios)
+    # create anchors for each scales
     anchors = np.vstack([_scale_enum(ratio_anchors[i, :], scales)
                          for i in xrange(ratio_anchors.shape[0])])
     return anchors
@@ -62,6 +64,14 @@ def _mkanchors(ws, hs, x_ctr, y_ctr):
     """
     Given a vector of widths (ws) and heights (hs) around a center
     (x_ctr, y_ctr), output a set of anchors (windows).
+   
+    Anchors are represented by their top-left and bottom right corner.
+    (a0, a1, a2, a3): 
+      (a0,a1) ------  *
+      -----------------
+      ---(ctrx,ctry)---
+      -----------------
+      ----------(a2,a3)
     """
 
     ws = ws[:, np.newaxis]

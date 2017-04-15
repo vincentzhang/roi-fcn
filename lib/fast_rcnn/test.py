@@ -134,6 +134,8 @@ def im_detect(net, im, boxes=None):
 
     if cfg.TEST.HAS_RPN:
         im_blob = blobs['data']
+        # blobs['im_info']: H x W x scale_factor(transform the input image to
+        # canonical size)
         blobs['im_info'] = np.array(
             [[im_blob.shape[2], im_blob.shape[3], im_scales[0]]],
             dtype=np.float32)
@@ -167,7 +169,7 @@ def im_detect(net, im, boxes=None):
         # use softmax estimated probabilities
         scores = blobs_out['cls_prob']
 
-    if cfg.TEST.BBOX_REG:
+    if cfg.TEST.BBOX_REG: # Default
         # Apply bounding-box regression deltas
         box_deltas = blobs_out['bbox_pred']
         pred_boxes = bbox_transform_inv(boxes, box_deltas)

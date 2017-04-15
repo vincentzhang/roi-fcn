@@ -108,11 +108,11 @@ def _get_bbox_regression_labels(bbox_target_data, num_classes):
     """Bounding-box regression targets (bbox_target_data) are stored in a
     compact form N x (class, tx, ty, tw, th)
 
-    This function expands those targets into the 4-of-4*K representation used
+    This function expands those targets into the N-of-4*K representation used
     by the network (i.e. only one class has non-zero targets).
 
     Returns:
-        bbox_target (ndarray): N x 4K blob of regression targets
+        bbox_targets (ndarray): N x 4K blob of regression targets
         bbox_inside_weights (ndarray): N x 4K blob of loss weights
     """
 

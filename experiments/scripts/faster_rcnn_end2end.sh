@@ -50,9 +50,10 @@ echo Logging output to "$LOG"
 
 #--weights data/imagenet_models/${NET}.v2.caffemodel \
 #--weights output/faster_rcnn_end2end/voc_2007_trainval/vgg16_faster_rcnn_iter_10000.caffemodel \
+#--weights output/learn_from_scratch_faster_rcnn_end2end/voc_2007_trainval/zf_faster_rcnn_iter_20000.caffemodel \
 time ./tools/train_net.py --gpu ${GPU_ID} \
   --solver models/${PT_DIR}/${NET}/faster_rcnn_end2end/solver.prototxt \
-  --weights output/learn_from_scratch_faster_rcnn_end2end/voc_2007_trainval/zf_faster_rcnn_iter_20000.caffemodel \
+  --weights data/imagenet_models/${NET}.v2.caffemodel \
   --imdb ${TRAIN_IMDB} \
   --iters ${ITERS} \
   --cfg experiments/cfgs/faster_rcnn_end2end.yml \
