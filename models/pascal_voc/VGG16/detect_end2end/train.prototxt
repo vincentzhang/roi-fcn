@@ -1,13 +1,26 @@
 name: "VGG_ILSVRC_16_layers"
+#layer {
+#  name: 'input-data'
+#  type: 'Python'
+#  top: 'data'
+#  top: 'im_info'
+#  top: 'gt_boxes'
+#  python_param {
+#    module: 'roi_data_layer.layer'
+#    layer: 'RoIDataLayer'
+#    param_str: "'num_classes': 21"
+#  }
+#}
 layer {
   name: 'input-data'
   type: 'Python'
   top: 'data'
   top: 'im_info'
   top: 'gt_boxes'
+  top: 'img_labels'
   python_param {
-    module: 'roi_data_layer.layer'
-    layer: 'RoIDataLayer'
+    module: 'roi_data_layer.img_layer'
+    layer: 'RoIDataImgLayer'
     param_str: "'num_classes': 21"
   }
 }
@@ -538,42 +551,69 @@ layer {
 #  }
 #}
 
+#layer {
+#  name: 'roi-data'
+#  type: 'Python'
+#  bottom: 'rpn_rois'
+#  bottom: 'gt_boxes'
+#  top: 'rois'
+#  top: 'labels'
+#  top: 'bbox_targets'
+#  top: 'bbox_inside_weights'
+#  top: 'bbox_outside_weights'
+#  python_param {
+#    module: 'rpn.proposal_target_layer'
+#    layer: 'ProposalTargetLayer'
+#    param_str: "'num_classes': 21"
+#  }
+#}
+# A new layer to pick the positive rois for training
+# also need a layer for output labels for the image and gt_boxes
 layer {
   name: 'roi-data'
   type: 'Python'
   bottom: 'rpn_rois'
   bottom: 'gt_boxes'
+  bottom: 'img_labels'
   top: 'rois'
-  top: 'labels'
-  top: 'bbox_targets'
-  top: 'bbox_inside_weights'
-  top: 'bbox_outside_weights'
+  #top: 'labels'
   python_param {
-    module: 'rpn.proposal_target_layer'
-    layer: 'ProposalTargetLayer'
+    module: 'rpn.roi_target_layer'
+    layer: 'RoiTargetLayer'
     param_str: "'num_classes': 21"
   }
 }
 
 #========= RCNN ============
 
-layer {
-  name: "roi_pool5"
-  type: "ROIPooling"
-  bottom: "conv5_3"
-  bottom: "rois"
-  top: "pool5"
-  roi_pooling_param {
-    pooled_w: 7
-    pooled_h: 7
-    spatial_scale: 0.0625 # 1/16
-  }
-}
-
+#layer {
+#  name: "roi_pool5"
+#  type: "ROIPooling"
+#  bottom: "conv5_3"
+#  bottom: "rois"
+#  top: "pool5"
+#  roi_pooling_param {
+#    pooled_w: 7
+#    pooled_h: 7
+#    spatial_scale: 0.0625 # 1/16
+#  }
+#}
+#layer {
+#  name: "roi_conv5"
+#  type: "ROIConvolution"
+#  bottom: "conv5_3"
+#  bottom: "rois"
+#  top: "conv5"
+#  roi_convolution_param {
+#    spatial_scale: 0.0625 # 1/16
+#  }
+#}
+# Add FCN
 layer {
   name: "fc6"
-  type: "Convolution"
-  bottom: "pool5"
+  type: "ROIConvolution"
+  bottom: "conv5_3"
+  bottom: "rois"
   top: "fc6"
   param {
     lr_mult: 1
@@ -588,6 +628,9 @@ layer {
     pad: 0
     kernel_size: 7
     stride: 1
+  }
+  roi_convolution_param {
+    spatial_scale: 0.0625 # 1/16
   }
 }
 
@@ -717,8 +760,8 @@ layer {
   convolution_param {
     num_output: 21
     bias_term: false
-    kernel_size: 64
-    stride: 32
+    kernel_size: 32
+    stride: 16
   }
 }
 layer {
@@ -737,7 +780,7 @@ layer {
   name: "loss_cls"
   type: "SoftmaxWithLoss"
   bottom: "score"
-  bottom: "labels"
+  bottom: "img_labels"
   propagate_down: 1
   propagate_down: 0
   top: "loss_cls"

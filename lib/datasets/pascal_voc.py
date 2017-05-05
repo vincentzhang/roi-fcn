@@ -18,9 +18,10 @@ import subprocess
 import uuid
 from voc_eval import voc_eval
 from fast_rcnn.config import cfg
+import ipdb
 
 class pascal_voc(imdb):
-    def __init__(self, image_set, year, devkit_path=None):
+    def __init__(self, image_set, year, set_category='Main', devkit_path=None):
         imdb.__init__(self, 'voc_' + year + '_' + image_set)
         self._year = year
         self._image_set = image_set
@@ -35,7 +36,8 @@ class pascal_voc(imdb):
                          'sheep', 'sofa', 'train', 'tvmonitor')
         self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
         self._image_ext = '.jpg'
-        self._image_index = self._load_image_set_index()
+        self._image_index = self._load_image_set_index(set_category)
+        #self._image_index_seg = self._load_image_set_index('Segmentation')
         # Default to roidb handler
         self._roidb_handler = self.selective_search_roidb
         self._salt = str(uuid.uuid4())
@@ -70,14 +72,14 @@ class pascal_voc(imdb):
                 'Path does not exist: {}'.format(image_path)
         return image_path
 
-    def _load_image_set_index(self):
+    def _load_image_set_index(self, set_category='Main'):
         """
-        Load the indexes listed in this dataset's image set file.
+        Load a list of indexes listed in this dataset's image set file.
         """
         # Example path to image set file:
         # self._devkit_path + /VOCdevkit2007/VOC2007/ImageSets/Main/val.txt
-        image_set_file = os.path.join(self._data_path, 'ImageSets', 'Main',
-                                      self._image_set + '.txt')
+        image_set_file = os.path.join(self._data_path, 'ImageSets',
+                set_category, self._image_set + '.txt')
         assert os.path.exists(image_set_file), \
                 'Path does not exist: {}'.format(image_set_file)
         with open(image_set_file) as f:

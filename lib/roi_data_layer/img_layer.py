@@ -5,20 +5,20 @@
 # Written by Ross Girshick
 # --------------------------------------------------------
 
-"""The data layer used during training to train a Fast R-CNN network.
+"""The data layer used during training to train an RPN-FCN network.
 
-RoIDataLayer implements a Caffe Python layer.
+RoIDataImgLayer implements a Caffe Python layer.
 """
 
 import caffe
 from fast_rcnn.config import cfg
-from roi_data_layer.minibatch import get_minibatch
+from roi_data_layer.minibatch import get_minibatch, get_minibatch_with_img_labels
 import numpy as np
 import yaml
 from multiprocessing import Process, Queue
 
-class RoIDataLayer(caffe.Layer):
-    """Fast R-CNN data layer used for training."""
+class RoIDataImgLayer(caffe.Layer):
+    """RPN-FCN data layer used for training."""
 
     def _shuffle_roidb_inds(self):
         """Randomly permute the training roidb."""
@@ -81,9 +81,7 @@ class RoIDataLayer(caffe.Layer):
             atexit.register(cleanup)
 
     def setup(self, bottom, top):
-        """Setup the RoIDataLayer."""
-        #import pdb;pdb.set_trace()
-
+        """Setup the RoIDataImgLayer."""
         # parse the layer parameter string, which must be valid YAML
         layer_params = yaml.load(self.param_str_)
 
@@ -105,6 +103,12 @@ class RoIDataLayer(caffe.Layer):
 
             top[idx].reshape(1, 4)
             self._name_to_top_map['gt_boxes'] = idx
+            idx += 1
+
+            # pixel-wise labels
+            top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH,
+            max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
+            self._name_to_top_map['img_labels'] = idx
             idx += 1
         else: # not using RPN
             # rois blob: holds R regions of interest, each is a 5-tuple

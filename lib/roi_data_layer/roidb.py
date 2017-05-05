@@ -12,6 +12,7 @@ from fast_rcnn.config import cfg
 from fast_rcnn.bbox_transform import bbox_transform
 from utils.cython_bbox import bbox_overlaps
 import PIL
+import pdb
 
 def prepare_roidb(imdb):
     """Enrich the imdb's roidb by adding some derived quantities that
@@ -89,6 +90,7 @@ def add_bbox_regression_targets(roidb):
     print 'bbox target stdevs:'
     print stds
     print stds[1:, :].mean(axis=0) # ignore bg class
+    pdb.set_trace()
 
     # Normalize targets
     if cfg.TRAIN.BBOX_NORMALIZE_TARGETS:

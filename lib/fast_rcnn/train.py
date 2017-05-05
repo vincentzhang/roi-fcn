@@ -16,6 +16,7 @@ import os
 
 from caffe.proto import caffe_pb2
 import google.protobuf as pb2
+import ipdb
 
 class SolverWrapper(object):
     """A simple wrapper around Caffe's solver.
@@ -61,7 +62,6 @@ class SolverWrapper(object):
         scale_bbox_params = (cfg.TRAIN.BBOX_REG and
                              cfg.TRAIN.BBOX_NORMALIZE_TARGETS and
                              net.params.has_key('bbox_pred'))
-
         if scale_bbox_params:
             # save original values
             orig_0 = net.params['bbox_pred'][0].data.copy()
@@ -106,6 +106,7 @@ class SolverWrapper(object):
             if self.solver.iter % cfg.TRAIN.SNAPSHOT_ITERS == 0:
                 last_snapshot_iter = self.solver.iter
                 model_paths.append(self.snapshot())
+            ipdb.set_trace()
 
         if last_snapshot_iter != self.solver.iter:
             model_paths.append(self.snapshot())

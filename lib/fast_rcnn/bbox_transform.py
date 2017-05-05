@@ -28,6 +28,7 @@ def bbox_transform(ex_rois, gt_rois):
     return targets
 
 def bbox_transform_inv(boxes, deltas):
+    """ convert deltas wrt to boxes to [x1,y1,x2,y2]"""
     if boxes.shape[0] == 0:
         return np.zeros((0, deltas.shape[1]), dtype=deltas.dtype)
 
