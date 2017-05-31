@@ -12,7 +12,7 @@ RoIDataImgLayer implements a Caffe Python layer.
 
 import caffe
 from fast_rcnn.config import cfg
-from roi_data_layer.minibatch import get_minibatch, get_minibatch_with_img_labels
+from roi_data_layer.minibatch import get_minibatch_with_img_labels
 import numpy as np
 import yaml
 from multiprocessing import Process, Queue
@@ -60,7 +60,7 @@ class RoIDataImgLayer(caffe.Layer):
         else:
             db_inds = self._get_next_minibatch_inds()
             minibatch_db = [self._roidb[i] for i in db_inds]
-            return get_minibatch(minibatch_db, self._num_classes)
+            return get_minibatch_with_img_labels(minibatch_db, self._num_classes)
 
     def set_roidb(self, roidb):
         """Set the roidb to be used by this layer during training."""
@@ -68,13 +68,13 @@ class RoIDataImgLayer(caffe.Layer):
         self._shuffle_roidb_inds()
         if cfg.TRAIN.USE_PREFETCH:
             self._blob_queue = Queue(10)
-            self._prefetch_process = BlobFetcher(self._blob_queue,
+            self._prefetch_process = BlobFetcherWithImgLabel(self._blob_queue,
                                                  self._roidb,
                                                  self._num_classes)
             self._prefetch_process.start()
             # Terminate the child process when the parent exists
             def cleanup():
-                print 'Terminating BlobFetcher'
+                print 'Terminating BlobFetcherWithImgLabel'
                 self._prefetch_process.terminate()
                 self._prefetch_process.join()
             import atexit
@@ -97,6 +97,12 @@ class RoIDataImgLayer(caffe.Layer):
         idx += 1
 
         if cfg.TRAIN.HAS_RPN:
+            # pixel-wise labels
+            top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH,
+            max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
+            self._name_to_top_map['img_labels'] = idx
+            idx += 1
+
             top[idx].reshape(1, 3)
             self._name_to_top_map['im_info'] = idx
             idx += 1
@@ -105,11 +111,6 @@ class RoIDataImgLayer(caffe.Layer):
             self._name_to_top_map['gt_boxes'] = idx
             idx += 1
 
-            # pixel-wise labels
-            top[idx].reshape(cfg.TRAIN.IMS_PER_BATCH,
-            max(cfg.TRAIN.SCALES), cfg.TRAIN.MAX_SIZE)
-            self._name_to_top_map['img_labels'] = idx
-            idx += 1
         else: # not using RPN
             # rois blob: holds R regions of interest, each is a 5-tuple
             # (n, x1, y1, x2, y2) specifying an image batch index n and a
@@ -162,10 +163,10 @@ class RoIDataImgLayer(caffe.Layer):
         """Reshaping happens during the call to forward."""
         pass
 
-class BlobFetcher(Process):
+class BlobFetcherWithImgLabel(Process):
     """Experimental class for prefetching blobs in a separate process."""
     def __init__(self, queue, roidb, num_classes):
-        super(BlobFetcher, self).__init__()
+        super(BlobFetcherWithImgLabel, self).__init__()
         self._queue = queue
         self._roidb = roidb
         self._num_classes = num_classes
@@ -192,9 +193,9 @@ class BlobFetcher(Process):
         return db_inds
 
     def run(self):
-        print 'BlobFetcher started'
+        print 'BlobFetcherWithImgLabel started'
         while True:
             db_inds = self._get_next_minibatch_inds()
             minibatch_db = [self._roidb[i] for i in db_inds]
-            blobs = get_minibatch(minibatch_db, self._num_classes)
+            blobs = get_minibatch_with_img_labels(minibatch_db, self._num_classes)
             self._queue.put(blobs)

@@ -14,7 +14,6 @@ import numpy.random as npr
 from generate_anchors import generate_anchors
 from utils.cython_bbox import bbox_overlaps
 from fast_rcnn.bbox_transform import bbox_transform
-import pdb
 
 DEBUG = False
 
@@ -101,7 +100,6 @@ class AnchorTargetLayer(caffe.Layer):
         # shift anchors (K, A, 4)
         # reshape to (K*A, 4) shifted anchors
         A = self._num_anchors
-        pdb.set_trace()
         K = shifts.shape[0]
         all_anchors = (self._anchors.reshape((1, A, 4)) +
                        shifts.reshape((1, K, 4)).transpose((1, 0, 2)))

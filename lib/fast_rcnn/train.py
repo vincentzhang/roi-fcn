@@ -106,7 +106,7 @@ class SolverWrapper(object):
             if self.solver.iter % cfg.TRAIN.SNAPSHOT_ITERS == 0:
                 last_snapshot_iter = self.solver.iter
                 model_paths.append(self.snapshot())
-            ipdb.set_trace()
+                ipdb.set_trace()
 
         if last_snapshot_iter != self.solver.iter:
             model_paths.append(self.snapshot())

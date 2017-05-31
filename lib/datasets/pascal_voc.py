@@ -19,6 +19,7 @@ import uuid
 from voc_eval import voc_eval
 from fast_rcnn.config import cfg
 import ipdb
+import PIL
 
 class pascal_voc(imdb):
     def __init__(self, image_set, year, set_category='Main', devkit_path=None):
@@ -36,7 +37,9 @@ class pascal_voc(imdb):
                          'sheep', 'sofa', 'train', 'tvmonitor')
         self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
         self._image_ext = '.jpg'
+        self._label_ext = '.png'
         self._image_index = self._load_image_set_index(set_category)
+        self._set = set_category
         #self._image_index_seg = self._load_image_set_index('Segmentation')
         # Default to roidb handler
         self._roidb_handler = self.selective_search_roidb
@@ -55,6 +58,13 @@ class pascal_voc(imdb):
                 'VOCdevkit path does not exist: {}'.format(self._devkit_path)
         assert os.path.exists(self._data_path), \
                 'Path does not exist: {}'.format(self._data_path)
+
+    @property
+    def add_label(self):
+        ret = False
+        if self._set == "Segmentation":
+            ret = True
+        return ret
 
     def image_path_at(self, i):
         """
@@ -86,6 +96,22 @@ class pascal_voc(imdb):
             image_index = [x.strip() for x in f.readlines()]
         return image_index
 
+    def label_path_at(self, i):
+        """
+        Return the absolute path to label of image i in the image sequence.
+        """
+        return self._label_path_from_index(self._image_index[i])
+
+    def _label_path_from_index(self, index):
+        """
+        Construct an label path from the image's "index" identifier.
+        """
+        label_path = os.path.join(self._data_path, 'SegmentationClass',
+                                  index + self._label_ext)
+        assert os.path.exists(label_path), \
+                'Label Path does not exist: {}'.format(label_path)
+        return label_path
+
     def _get_default_path(self):
         """
         Return the default path where PASCAL VOC is expected to be installed.
@@ -112,6 +138,27 @@ class pascal_voc(imdb):
         print 'wrote gt roidb to {}'.format(cache_file)
 
         return gt_roidb
+
+    def gt_img_labels(self):
+        """
+        Return the database of ground-truth pixel-wise labels.
+
+        This function loads/saves from/to a cache file to speed up future calls.
+        """
+        cache_file = os.path.join(self.cache_path, self.name + '_gt_img_labels.pkl')
+        if os.path.exists(cache_file):
+            with open(cache_file, 'rb') as fid:
+                gt_img_labels = cPickle.load(fid)
+            print '{} gt img labels loaded from {}'.format(self.name, cache_file)
+            return gt_img_labels
+
+        gt_img_labels = [self._load_pascal_annotation_segment(index)
+                    for index in self.image_index]
+        with open(cache_file, 'wb') as fid:
+            cPickle.dump(gt_img_labels, fid, cPickle.HIGHEST_PROTOCOL)
+        print 'wrote gt img labels to {}'.format(cache_file)
+
+        return gt_img_labels
 
     def selective_search_roidb(self):
         """
@@ -178,6 +225,16 @@ class pascal_voc(imdb):
             box_list.append(boxes)
 
         return self.create_roidb_from_box_list(box_list, gt_roidb)
+
+#    def _load_pascal_annotation_segment(self, index):
+#        """
+#        Load image and pixel-wise labels png files in the PASCAL VOC format.
+#        Return a numpy array of uint8 type
+#        """
+#        filename = os.path.join(self._data_path, 'SegmentationClass', index +
+#                '.png')
+#        img = np.array(PIL.Image.open(filename))
+#        return img
 
     def _load_pascal_annotation(self, index):
         """

@@ -24,8 +24,8 @@ EXTRA_ARGS_SLUG=${EXTRA_ARGS// /_}
 
 case $DATASET in
   pascal_voc)
-    TRAIN_IMDB="voc_2007_trainval"
-    TEST_IMDB="voc_2007_test"
+    TRAIN_IMDB="voc_2007_trainval_Segmentation"
+    TEST_IMDB="voc_2007_test_Segmentation"
     PT_DIR="pascal_voc"
     ITERS=70000
     ;;
@@ -51,9 +51,10 @@ echo Logging output to "$LOG"
 #--weights data/imagenet_models/${NET}.v2.caffemodel \
 #--weights output/faster_rcnn_end2end/voc_2007_trainval/vgg16_faster_rcnn_iter_10000.caffemodel \
 #--weights output/learn_from_scratch_faster_rcnn_end2end/voc_2007_trainval/zf_faster_rcnn_iter_20000.caffemodel \
+#--weights data/imagenet_models/${NET}.v2.fcn-surgery.caffemodel \
 time ./tools/train_net.py --gpu ${GPU_ID} \
   --solver models/${PT_DIR}/${NET}/detect_end2end/solver.prototxt \
-  --weights data/imagenet_models/${NET}.v2.caffemodel \
+  --weights data/faster_rcnn_models/VGG16_faster_rcnn_final.caffemodel \
   --imdb ${TRAIN_IMDB} \
   --iters ${ITERS} \
   --cfg experiments/cfgs/detect_end2end.yml \

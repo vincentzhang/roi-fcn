@@ -15,9 +15,9 @@ layer {
   name: 'input-data'
   type: 'Python'
   top: 'data'
+  top: 'img_labels'
   top: 'im_info'
   top: 'gt_boxes'
-  top: 'img_labels'
   python_param {
     module: 'roi_data_layer.img_layer'
     layer: 'RoIDataImgLayer'
@@ -40,7 +40,8 @@ layer {
   }
   convolution_param {
     num_output: 64
-    pad: 1
+    #pad: 1
+    pad: 50
     kernel_size: 3
     weight_filler {
       type: "xavier"
@@ -576,10 +577,10 @@ layer {
   bottom: 'gt_boxes'
   bottom: 'img_labels'
   top: 'rois'
-  #top: 'labels'
+  top: 'rois_img_labels'
   python_param {
     module: 'rpn.roi_target_layer'
-    layer: 'RoiTargetLayer'
+    layer: 'RoITargetLayer'
     param_str: "'num_classes': 21"
   }
 }
@@ -611,6 +612,7 @@ layer {
 # Add FCN
 layer {
   name: "fc6"
+  #name: "fc6x"
   type: "ROIConvolution"
   bottom: "conv5_3"
   bottom: "rois"
@@ -628,6 +630,7 @@ layer {
     pad: 0
     kernel_size: 7
     stride: 1
+    is_roi: 1
   }
   roi_convolution_param {
     spatial_scale: 0.0625 # 1/16
@@ -685,10 +688,12 @@ layer {
   }
 }
 layer {
-  name: "score_fr"
+  #name: "score_fr"
+  name: "cls_score"
   type: "Convolution"
   bottom: "fc7"
-  top: "score_fr"
+  #top: "score_fr"
+  top: "cls_score"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -701,6 +706,14 @@ layer {
     num_output: 21
     pad: 0
     kernel_size: 1
+    #weight_filler {
+    #  type: "gaussian"
+    #  std: 0.01
+    #}
+    #bias_filler {
+    #  type: "constant"
+    #  value: 0
+    #}
   }
 }
 #layer {
@@ -752,7 +765,8 @@ layer {
 layer {
   name: "upscore"
   type: "Deconvolution"
-  bottom: "score_fr"
+  #bottom: "score_fr"
+  bottom: "cls_score"
   top: "upscore"
   param {
     lr_mult: 1
@@ -772,7 +786,7 @@ layer {
   top: "score"
   crop_param {
     axis: 2
-    offset: 19
+    offset: 9
   }
 }
 
@@ -780,7 +794,7 @@ layer {
   name: "loss_cls"
   type: "SoftmaxWithLoss"
   bottom: "score"
-  bottom: "img_labels"
+  bottom: "rois_img_labels"
   propagate_down: 1
   propagate_down: 0
   top: "loss_cls"

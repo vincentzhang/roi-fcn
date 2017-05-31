@@ -16,8 +16,8 @@ import numpy as np
 # Set up voc_<year>_<split> using selective search "fast" mode
 for year in ['2007', '2012']:
     for split in ['train', 'val', 'trainval', 'test']:
-        for category in ['Main', 'Segmentation']
-            if cagegory == 'Main':
+        for category in ['Main', 'Segmentation']:
+            if category == 'Main':
                 name = 'voc_{}_{}'.format(year, split)
                 __sets[name] = (lambda split=split, year=year: pascal_voc(split,
                                 year))

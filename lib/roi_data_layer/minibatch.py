@@ -11,8 +11,8 @@ import numpy as np
 import numpy.random as npr
 import cv2
 from fast_rcnn.config import cfg
-from utils.blob import prep_im_for_blob, im_list_to_blob
-import pdb
+from utils.blob import prep_im_for_blob, im_list_to_blob, prep_im_and_label_for_blob, label_list_to_blob
+import PIL
 
 def get_minibatch(roidb, num_classes):
     """Given a roidb, construct a minibatch sampled from it."""
@@ -95,9 +95,9 @@ def get_minibatch_with_img_labels(roidb, num_classes):
     fg_rois_per_image = np.round(cfg.TRAIN.FG_FRACTION * rois_per_image)
 
     # Get the input image blob, formatted for caffe
-    im_blob, im_scales, im_labels = _get_image_blob_and_label(roidb, random_scale_inds)
+    im_blob, label_blob, im_scales = _get_image_blob_and_label(roidb, random_scale_inds)
 
-    blobs = {'data': im_blob}
+    blobs = {'data': im_blob, 'img_labels': label_blob}
 
     if cfg.TRAIN.HAS_RPN:
         assert len(im_scales) == 1, "Single batch only"
@@ -218,27 +218,31 @@ def _get_image_blob(roidb, scale_inds):
     return blob, im_scales
 
 def _get_image_blob_and_label(roidb, scale_inds):
-    """Builds an input blob from the images in the roidb at the specified
-    scales.
+    """Builds an input blob and pixel-wise label from the images in the roidb
+    at the specified scales.
     """
     num_images = len(roidb)
     processed_ims = []
+    processed_labels = []
     im_scales = []
     for i in xrange(num_images):
-        import pdb; pdb.set_trace()
         im = cv2.imread(roidb[i]['image'])
+        label = np.asarray(PIL.Image.open(roidb[i]['img_labels']))
         if roidb[i]['flipped']:
             im = im[:, ::-1, :]
+            label = label[:, ::-1]
         target_size = cfg.TRAIN.SCALES[scale_inds[i]]
-        im, im_scale = prep_im_for_blob(im, cfg.PIXEL_MEANS, target_size,
+        im, im_scale, label = prep_im_and_label_for_blob(im, label, cfg.PIXEL_MEANS, target_size,
                                         cfg.TRAIN.MAX_SIZE)
         im_scales.append(im_scale)
         processed_ims.append(im)
+        processed_labels.append(label)
 
     # Create a blob to hold the input images
-    blob = im_list_to_blob(processed_ims)
+    blob_img = im_list_to_blob(processed_ims)
+    blob_label = label_list_to_blob(processed_labels)
 
-    return blob, im_scales
+    return blob_img,  blob_label, im_scales
 
 def _project_im_rois(im_rois, im_scale_factor):
     """Project image RoIs into the rescaled training image."""

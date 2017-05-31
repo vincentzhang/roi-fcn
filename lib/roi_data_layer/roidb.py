@@ -26,6 +26,8 @@ def prepare_roidb(imdb):
     roidb = imdb.roidb
     for i in xrange(len(imdb.image_index)):
         roidb[i]['image'] = imdb.image_path_at(i)
+        if imdb.add_label:
+            roidb[i]['img_labels'] = imdb.label_path_at(i)
         roidb[i]['width'] = sizes[i][0]
         roidb[i]['height'] = sizes[i][1]
         # need gt_overlaps as a dense array for argmax
@@ -90,7 +92,7 @@ def add_bbox_regression_targets(roidb):
     print 'bbox target stdevs:'
     print stds
     print stds[1:, :].mean(axis=0) # ignore bg class
-    pdb.set_trace()
+    #pdb.set_trace()
 
     # Normalize targets
     if cfg.TRAIN.BBOX_NORMALIZE_TARGETS:
