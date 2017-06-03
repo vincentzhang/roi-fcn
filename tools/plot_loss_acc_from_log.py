@@ -18,12 +18,15 @@ log_name = dir_name+fname
 # Plotting the loss
 print "Parse training loss"
 train_pix_loss = []
+train_smo_loss = []
 train_cls_loss = []
 train_bbox_loss = []
 with open(log_name,'r') as f:
   for line in f:
     if "loss" in line and "#0" in line and "Train net output" in line:
         train_pix_loss.append(float(line.split('=')[1].split("(")[0].strip()))
+    elif "loss" in line and "Iteration" in line:
+        train_smo_loss.append(float(line.rsplit('=')[1].strip()))
     elif "loss" in line and "#1" in line and "Train net output" in line:
         train_cls_loss.append(float(line.split('=')[1].split("(")[0].strip()))
     elif "loss" in line and "#2" in line and "Train net output" in line:
@@ -31,6 +34,7 @@ with open(log_name,'r') as f:
 
 
 print("Length of pix_loss {}".format(len(train_pix_loss)))
+print("Length of smo_loss {}".format(len(train_smo_loss)))
 print("Length of cls_loss {}".format(len(train_cls_loss)))
 print("Length of box_loss {}".format(len(train_bbox_loss)))
 
@@ -38,11 +42,13 @@ print("For {} iterations".format(len(train_pix_loss)))
 niter = len(train_pix_loss)
 # Plot 1, Pixel-wise Loss, per batch (1 image)
 f, axarr = plt.subplots(2)
-axarr[0].plot(np.arange(len(train_pix_loss)), train_pix_loss)
+axarr[0].plot(np.arange(len(train_pix_loss)), train_pix_loss, 'b')
+axarr[0].plot(np.arange(len(train_smo_loss)), train_smo_loss, 'r')
 #ax2 = ax1.twinx()
 #ax2.plot(test_interval * np.arange(len(test_acc)), test_acc, 'r')
 #ax2.set_ylabel('RPN loss')
 axarr[0].set_xlabel('iteration')
+axarr[0].legend(['pix_loss','smoothed loss'])
 axarr[0].set_title('FCN Loss')
 axarr[0].set_ylabel('pixel-wise loss')
 # Plot 2, loss on the bbox prediction, per bat
