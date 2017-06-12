@@ -16,6 +16,7 @@ import os
 
 from caffe.proto import caffe_pb2
 import google.protobuf as pb2
+import google.protobuf.text_format
 import ipdb
 
 class SolverWrapper(object):
@@ -106,10 +107,11 @@ class SolverWrapper(object):
             if self.solver.iter % cfg.TRAIN.SNAPSHOT_ITERS == 0:
                 last_snapshot_iter = self.solver.iter
                 model_paths.append(self.snapshot())
-                ipdb.set_trace()
+                #ipdb.set_trace()
 
         if last_snapshot_iter != self.solver.iter:
-            model_paths.append(self.snapshot())
+            pass
+         #  model_paths.append(self.snapshot())
         return model_paths
 
 def get_training_roidb(imdb):
