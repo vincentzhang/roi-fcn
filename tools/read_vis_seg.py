@@ -1,10 +1,12 @@
+""" This file reads segmentation labels and display it """
+
 import skimage.io
 import matplotlib.pyplot as plt
 import pdb
 
 def main(img_name):
     img = skimage.io.imread(img_name)
-    #pdb.set_trace()
+    pdb.set_trace()
     plt.imshow(img)
     plt.show()
 

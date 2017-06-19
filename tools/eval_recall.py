@@ -7,6 +7,7 @@ import argparse
 import time, os, sys
 import numpy as np
 
+
 def parse_args():
     """
     Parse input arguments
@@ -46,8 +47,12 @@ if __name__ == '__main__':
         raw_data = sio.loadmat(filename)['aboxes'].ravel()
         candidate_boxes = raw_data
 
-    ar, gt_overlaps, recalls, thresholds = \
+    results = \
         imdb.evaluate_recall(candidate_boxes=candidate_boxes)
+    ar = results['ar']
+    gt_overlaps = results['gt_overlaps']
+    recalls = results['recalls']
+    thresholds = results['thresholds']
     print 'Method: {}'.format(args.method)
     print 'AverageRec: {:.3f}'.format(ar)
 

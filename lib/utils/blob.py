@@ -55,8 +55,6 @@ def label_list_to_blob(labels):
         label = labels[i]
         blob[i, 0, 0:label.shape[0], 0:label.shape[1]] = label
     # Axis order will become: (batch elem, channel, height, width)
-    #channel_swap = (0, 3, 1, 2)
-    #blob = blob.transpose(channel_swap)
     return blob
 
 def prep_im_and_label_for_blob(im, label, pixel_means, target_size, max_size):

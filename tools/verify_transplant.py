@@ -29,12 +29,18 @@ net = caffe.Net('../models/pascal_voc/VGG16/detect_end2end/train.prototxt',
 #caffe.set_mode_gpu()
 #caffe.set_device(0)
 
-for layer in base_net.params.keys():
-    print("Net 0  :  histogram of layer {}: {} ".format(layer,
-        np.histogram(base_net.params[layer][0].data, [-1, -0.5, 0, 0.2, 0.5, 0.8,
-            1.0, 1000])[0]))
-    print("Net 1  :  histogram of layer {}: {} ".format(layer,
-        np.histogram(net.params[layer][0].data, [-1, -0.5, 0, 0.2, 0.5, 0.8,
-            1.0, 1000])[0]))
-        # verify that VGG-surgery 1 is the same as 2. the diff: with or w/o the
-        # yml file of detect_end2end.yml
+for layer in net.params.keys():
+    if layer in base_net.params.keys():
+        print("Net 0  :  histogram of layer {}: {} ".format(layer,
+            np.histogram(base_net.params[layer][0].data, [-1, -0.5, 0, 0.2, 0.5, 0.8,
+                1.0, 1000])[0]))
+        print("Net 1  :  histogram of layer {}: {} ".format(layer,
+            np.histogram(net.params[layer][0].data, [-1, -0.5, 0, 0.2, 0.5, 0.8,
+                1.0, 1000])[0]))
+            # verify that VGG-surgery 1 is the same as 2. the diff: with or w/o the
+            # yml file of detect_end2end.yml
+    else:
+        # only new net has the layer
+        print("Only Net 1  :  histogram of layer {}: {} ".format(layer,
+            np.histogram(net.params[layer][0].data, [-1, -0.5, 0, 0.2, 0.5, 0.8,
+                1.0, 1000])[0]))

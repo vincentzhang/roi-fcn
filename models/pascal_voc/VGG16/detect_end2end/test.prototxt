@@ -4,8 +4,15 @@ input: "data"
 input_shape {
   dim: 1
   dim: 3
-  dim: 224
-  dim: 224
+  dim: 600
+  dim: 600
+}
+input: "img_labels"
+input_shape {
+  dim: 1
+  dim: 1
+  dim: 600
+  dim: 600
 }
 
 input: "im_info"
@@ -29,7 +36,8 @@ layer {
   }
   convolution_param {
     num_output: 64
-    pad: 1
+    #pad: 1
+    pad: 50
     kernel_size: 3
   }
 }
@@ -474,22 +482,24 @@ layer {
 
 #========= RCNN ============
 
-layer {
-  name: "roi_pool5"
-  type: "ROIPooling"
-  bottom: "conv5_3"
-  bottom: "rois"
-  top: "pool5"
-  roi_pooling_param {
-    pooled_w: 7
-    pooled_h: 7
-    spatial_scale: 0.0625 # 1/16
-  }
-}
+#layer {
+#  name: "roi_pool5"
+#  type: "ROIPooling"
+#  bottom: "conv5_3"
+#  bottom: "rois"
+#  top: "pool5"
+#  roi_pooling_param {
+#    pooled_w: 7
+#    pooled_h: 7
+#    spatial_scale: 0.0625 # 1/16
+#  }
+#}
+# Add FCN
 layer {
   name: "fc6"
-  type: "InnerProduct"
-  bottom: "pool5"
+  type: "ROIConvolution"
+  bottom: "conv5_3"
+  bottom: "rois"
   top: "fc6"
   param {
     lr_mult: 1
@@ -499,8 +509,15 @@ layer {
     lr_mult: 2
     decay_mult: 0
   }
-  inner_product_param {
+  convolution_param {
     num_output: 4096
+    pad: 0
+    kernel_size: 7
+    stride: 1
+    is_roi: 1
+  }
+  roi_convolution_param {
+    spatial_scale: 0.0625 # 1/16
   }
 }
 layer {
@@ -520,7 +537,7 @@ layer {
 }
 layer {
   name: "fc7"
-  type: "InnerProduct"
+  type: "Convolution"
   bottom: "fc6"
   top: "fc7"
   param {
@@ -531,8 +548,11 @@ layer {
     lr_mult: 2
     decay_mult: 0
   }
-  inner_product_param {
+  convolution_param {
     num_output: 4096
+    pad: 0
+    kernel_size: 1
+    stride: 1
   }
 }
 layer {
@@ -552,7 +572,7 @@ layer {
 }
 layer {
   name: "cls_score"
-  type: "InnerProduct"
+  type: "Convolution"
   bottom: "fc7"
   top: "cls_score"
   param {
@@ -563,46 +583,52 @@ layer {
     lr_mult: 2
     decay_mult: 0
   }
-  inner_product_param {
+  convolution_param {
     num_output: 21
-    weight_filler {
-      type: "gaussian"
-      std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
+    pad: 0
+    kernel_size: 1
   }
 }
 layer {
-  name: "bbox_pred"
-  type: "InnerProduct"
-  bottom: "fc7"
-  top: "bbox_pred"
+  name: "upscore"
+  type: "Deconvolution"
+  bottom: "cls_score"
+  top: "upscore"
   param {
     lr_mult: 1
-    decay_mult: 1
   }
-  param {
-    lr_mult: 2
-    decay_mult: 0
-  }
-  inner_product_param {
-    num_output: 84
-    weight_filler {
-      type: "gaussian"
-      std: 0.001
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
+  convolution_param {
+    num_output: 21
+    bias_term: false
+    kernel_size: 32
+    stride: 16
   }
 }
 layer {
-  name: "cls_prob"
-  type: "Softmax"
-  bottom: "cls_score"
-  top: "cls_prob"
+  name: "score"
+  type: "Crop"
+  bottom: "upscore"
+  bottom: "data"
+  top: "score"
+  crop_param {
+    axis: 2
+    offset: 12
+    # used to be 9
+  }
 }
+
+layer {
+  name: "loss_cls"
+  type: "SoftmaxWithLoss"
+  bottom: "score"
+  bottom: "img_labels"
+  top: "loss_cls"
+  loss_weight: 1
+  loss_param {
+    ignore_label: 255
+    normalize: false # normalize by the batch size, consistent with FCN
+  }
+
+}
+
+

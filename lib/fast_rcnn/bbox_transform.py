@@ -8,6 +8,7 @@
 import numpy as np
 
 def bbox_transform(ex_rois, gt_rois):
+    """ ex_rois, gt_rois: [x1,y1,x2,y2] """
     ex_widths = ex_rois[:, 2] - ex_rois[:, 0] + 1.0
     ex_heights = ex_rois[:, 3] - ex_rois[:, 1] + 1.0
     ex_ctr_x = ex_rois[:, 0] + 0.5 * ex_widths
@@ -28,7 +29,12 @@ def bbox_transform(ex_rois, gt_rois):
     return targets
 
 def bbox_transform_inv(boxes, deltas):
-    """ convert deltas wrt to boxes to [x1,y1,x2,y2]"""
+    """ convert deltas wrt to boxes to [x1,y1,x2,y2]
+
+        boxes: [ x1,y1,x2,y2 ]
+        deltas: [tx,ty,tw,th]
+        pred_boxes: [x1,y1,x2,y2] after applying the transformation of deltas
+    """
     if boxes.shape[0] == 0:
         return np.zeros((0, deltas.shape[1]), dtype=deltas.dtype)
 

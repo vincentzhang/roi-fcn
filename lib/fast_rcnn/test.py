@@ -16,7 +16,7 @@ import cv2
 import caffe
 from fast_rcnn.nms_wrapper import nms
 import cPickle
-from utils.blob import im_list_to_blob
+from utils.blob import im_list_to_blob,prep_im_and_label_for_blob,label_list_to_blob 
 import os
 
 def _get_image_blob(im):
@@ -54,6 +54,41 @@ def _get_image_blob(im):
     blob = im_list_to_blob(processed_ims)
 
     return blob, np.array(im_scale_factors)
+
+def _get_image_label_blob(im, label):
+    """Converts an image into a network input.
+
+    Arguments:
+        im (ndarray): a color image in BGR order
+        label (ndarray): the pixel-wise label of im
+
+    Returns:
+        blob (ndarray): a data blob holding an image pyramid
+        im_scale_factors (list): list of image scales (relative to im) used
+            in the image pyramid
+        label_blob (ndarray): a label blob holding resized labels
+    """
+    im_orig = im.astype(np.float32, copy=True)
+    label_orig = label.astype(np.uint8, copy=True)
+
+    processed_ims = []
+    processed_labels = []
+    im_scale_factors = []
+
+    for target_size in cfg.TEST.SCALES:
+        im, im_scale, label = prep_im_and_label_for_blob(im, label, cfg.PIXEL_MEANS, target_size, cfg.TEST.MAX_SIZE)
+        im_scale_factors.append(im_scale)
+        processed_ims.append(im)
+        processed_labels.append(label)
+        # recover from the original img and label
+        im = np.copy(im_orig)
+        label = np.copy(label_orig)
+
+    # Create a blob to hold the input images
+    blob = im_list_to_blob(processed_ims)
+    label_blob = label_list_to_blob(processed_labels)
+
+    return blob, np.array(im_scale_factors), label_blob
 
 def _get_rois_blob(im_rois, im_scale_factors):
     """Converts RoIs into network inputs.
@@ -104,6 +139,74 @@ def _get_blobs(im, rois):
     if not cfg.TEST.HAS_RPN:
         blobs['rois'] = _get_rois_blob(rois, im_scale_factors)
     return blobs, im_scale_factors
+
+def _get_blobs_label(im, label):
+    blobs = {'data' : None, 'img_labels': None}
+    blobs['data'], im_scale_factors, blobs['img_labels'] = _get_image_label_blob(im, label)
+    return blobs, im_scale_factors
+
+def im_seg(net, im, label):
+    """
+        Arguments:
+            net (caffe.Net): Fast R-CNN network to use
+            im (ndarray): color image to test (in BGR order)
+        Returns:
+            pred (ndarray): pixel-wise prediction in object proposals
+            boxes (ndarray): R x (4*K) array of predicted bounding boxes
+    """
+    blobs, im_scales = _get_blobs_label(im, label)
+    if cfg.TEST.HAS_RPN:
+        im_blob = blobs['data']
+        # blobs['im_info']: H x W x scale_factor(transform the input image to
+        # canonical size)
+        blobs['im_info'] = np.array(
+            [[im_blob.shape[2], im_blob.shape[3], im_scales[0]]],
+            dtype=np.float32)
+    # reshape network inputs
+    net.blobs['data'].reshape(*(blobs['data'].shape))
+    net.blobs['img_labels'].reshape(*(blobs['img_labels'].shape))
+    if cfg.TEST.HAS_RPN:
+        net.blobs['im_info'].reshape(*(blobs['im_info'].shape))
+    # do forward
+    forward_kwargs = {'data': blobs['data'].astype(np.float32, copy=False)}
+    forward_kwargs['img_labels'] = blobs['img_labels']
+    if cfg.TEST.HAS_RPN:
+        forward_kwargs['im_info'] = blobs['im_info'].astype(np.float32, copy=False)
+    blobs_out = net.forward(**forward_kwargs)
+
+    if cfg.TEST.HAS_RPN:
+        assert len(im_scales) == 1, "Only single-image batch implemented"
+        rois = net.blobs['rois'].data.copy()
+        # unscale back to raw image space
+        boxes = rois[:, 1:5] / im_scales[0]
+
+    # use softmax estimated probabilities
+    loss_cls = blobs_out['loss_cls']
+    scores = net.blobs['score'].data # (1, 21, 562, 1000), resized image,
+
+    # pick the label for maximum class
+    scores = np.argmax(scores, axis=1).astype(np.uint8)
+    # resize this scores to map back to the original size of the image
+    scores = cv2.resize(scores[0,:,:], None, None, fx=1./im_scales[0], fy=1./im_scales[0],
+                    interpolation=cv2.INTER_NEAREST)
+
+    #if cfg.TEST.BBOX_REG: # Default
+    #    # Apply bounding-box regression deltas
+    #    box_deltas = blobs_out['bbox_pred']
+    #    pred_boxes = bbox_transform_inv(boxes, box_deltas)
+    #    pred_boxes = clip_boxes(pred_boxes, im.shape)
+    #else:
+    #    # Simply repeat the boxes, once for each class
+    #    pred_boxes = np.tile(boxes, (1, scores.shape[1]))
+
+    #if cfg.DEDUP_BOXES > 0 and not cfg.TEST.HAS_RPN:
+    #    # Map scores and predictions back to the original set of boxes
+    #    scores = scores[inv_index, :]
+    #    pred_boxes = pred_boxes[inv_index, :]
+
+    return scores, boxes
+
+
 
 def im_detect(net, im, boxes=None):
     """Detect object classes in an image given object proposals.
@@ -178,11 +281,6 @@ def im_detect(net, im, boxes=None):
         # Simply repeat the boxes, once for each class
         pred_boxes = np.tile(boxes, (1, scores.shape[1]))
 
-    if cfg.DEDUP_BOXES > 0 and not cfg.TEST.HAS_RPN:
-        # Map scores and predictions back to the original set of boxes
-        scores = scores[inv_index, :]
-        pred_boxes = pred_boxes[inv_index, :]
-
     return scores, pred_boxes
 
 def vis_detections(im, class_name, dets, thresh=0.3):
@@ -203,6 +301,9 @@ def vis_detections(im, class_name, dets, thresh=0.3):
                 )
             plt.title('{}  {:.3f}'.format(class_name, score))
             plt.show()
+
+def vis_seg(im, class_name):
+    pass
 
 def apply_nms(all_boxes, thresh):
     """Apply non-maximum suppression to all predicted boxes output by the

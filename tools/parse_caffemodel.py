@@ -2,7 +2,8 @@ import caffe
 from caffe.proto import caffe_pb2
 import numpy as np
 
-srcmodel = "../data/imagenet_models/VGG16.v2.caffemodel"
+#srcmodel = "../data/imagenet_models/VGG16.v2.caffemodel"
+srcmodel = "../data/imagenet_models/VGG16.v2.fcn-surgery.caffemodel"
 f = open(srcmodel,'rb')
 blob = caffe_pb2.NetParameter() #caffemodel is a NetParameter proto
 blob.ParseFromString(f.read())
