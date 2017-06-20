@@ -96,10 +96,10 @@ def demo(net, image_name, img_path, label_path):
     cfg.TEST.HAS_RPN = True
     im_pred, boxes = im_seg(net, im, label)
     timer.toc()
-    print ('Detection took {:.3f}s for '
+    print ('Detection-Segmentation took {:.3f}s for '
            '{:d} object proposals').format(timer.total_time, boxes.shape[0])
 
-    vis_seg(im, im_pred, label, boxes, cm)
+    vis_seg(im, im_pred, label, boxes, cm, image_name)
     # Visualize detections for each class
     CONF_THRESH = 0.8
     NMS_THRESH = 0.3
@@ -116,17 +116,17 @@ def demo(net, image_name, img_path, label_path):
     #    dets = dets[keep, :] # dets[:,:4]: bboxes; dets[-1]: score
     #    vis_detections(im, cls, dets, thresh=CONF_THRESH)
 
-def vis_seg(im, im_pred, label, boxes, cm):
-    
+def vis_seg(im, im_pred, label, boxes, cm, img_name='img'):
     plt.figure()
     plt.subplot(1,3,1)
-    plt.imshow(im[:,:,::-1])
+    plt.imshow(im[:,:,::-1]) # BGR->RGB
     plt.subplot(1,3,2)
-    plt.imshow(im_pred,vmin=0, vmax=255, cmap=cm)
+    plt.imshow(im_pred,vmin=0, vmax=255, cmap=cm) # prediction
     plt.subplot(1,3,3)
-    plt.imshow(label, vmin=0,vmax=255, cmap=cm)
+    plt.imshow(label, vmin=0,vmax=255, cmap=cm) # gt
+    plt.tight_layout()
     plt.show()
-    import pdb;pdb.set_trace() 
+    #plt.savefig('img-{}.png'.format(img_name), bbox_inches='tight')
 
 def parse_args():
     """Parse input arguments."""
@@ -196,7 +196,7 @@ if __name__ == '__main__':
     # load the images
     im_names = load_index_from_gt(img_set_file)
     #im_names = load_img_label(im_indices[0], img_path, label_path)
-    #pdb.set_trace()
+    pdb.set_trace()
     # for each image, do a forward pass and get the predicted pixel labels
     #im_names = ['000004.jpg', '000014.jpg', '000025.jpg', '000062.jpg',
     #            '000069.jpg', '000176.jpg']
