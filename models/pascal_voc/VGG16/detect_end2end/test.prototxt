@@ -7,13 +7,13 @@ input_shape {
   dim: 600
   dim: 600
 }
-input: "img_labels"
-input_shape {
-  dim: 1
-  dim: 1
-  dim: 600
-  dim: 600
-}
+#input: "img_labels"
+#input_shape {
+#  dim: 1
+#  dim: 1
+#  dim: 600
+#  dim: 600
+#}
 
 input: "im_info"
 input_shape {
@@ -473,6 +473,7 @@ layer {
   bottom: 'rpn_bbox_pred'
   bottom: 'im_info'
   top: 'rois'
+  top: 'rois_score'
   python_param {
     module: 'rpn.proposal_layer'
     layer: 'ProposalLayer'
@@ -617,18 +618,17 @@ layer {
   }
 }
 
-layer {
-  name: "loss_cls"
-  type: "SoftmaxWithLoss"
-  bottom: "score"
-  bottom: "img_labels"
-  top: "loss_cls"
-  loss_weight: 1
-  loss_param {
-    ignore_label: 255
-    normalize: false # normalize by the batch size, consistent with FCN
-  }
-
-}
+#layer {
+#  name: "loss_cls"
+#  type: "SoftmaxWithLoss"
+#  bottom: "score"
+#  bottom: "img_labels"
+#  top: "loss_cls"
+#  loss_weight: 1
+#  loss_param {
+#    ignore_label: 255
+#    normalize: false # normalize by the batch size, consistent with FCN
+#  }
+#}
 
 

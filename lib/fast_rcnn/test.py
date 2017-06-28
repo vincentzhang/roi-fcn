@@ -154,7 +154,8 @@ def im_seg(net, im, label):
             pred (ndarray): pixel-wise prediction in object proposals
             boxes (ndarray): R x (4*K) array of predicted bounding boxes
     """
-    blobs, im_scales = _get_blobs_label(im, label)
+    #blobs, im_scales = _get_blobs_label(im, label)
+    blobs, im_scales = _get_blobs(im, None)
     if cfg.TEST.HAS_RPN:
         im_blob = blobs['data']
         # blobs['im_info']: H x W x scale_factor(transform the input image to
@@ -164,24 +165,26 @@ def im_seg(net, im, label):
             dtype=np.float32)
     # reshape network inputs
     net.blobs['data'].reshape(*(blobs['data'].shape))
-    net.blobs['img_labels'].reshape(*(blobs['img_labels'].shape))
+    #net.blobs['img_labels'].reshape(*(blobs['img_labels'].shape))
     if cfg.TEST.HAS_RPN:
         net.blobs['im_info'].reshape(*(blobs['im_info'].shape))
     # do forward
     forward_kwargs = {'data': blobs['data'].astype(np.float32, copy=False)}
-    forward_kwargs['img_labels'] = blobs['img_labels']
+    #forward_kwargs['img_labels'] = blobs['img_labels']
     if cfg.TEST.HAS_RPN:
         forward_kwargs['im_info'] = blobs['im_info'].astype(np.float32, copy=False)
+    #import pdb;pdb.set_trace()
     blobs_out = net.forward(**forward_kwargs)
 
     if cfg.TEST.HAS_RPN:
         assert len(im_scales) == 1, "Only single-image batch implemented"
         rois = net.blobs['rois'].data.copy()
         # unscale back to raw image space
-        boxes = rois[:, 1:5] / im_scales[0]
-
+        boxes = rois[:, 1:5] * 16 / im_scales[0] # remove after fix
+        boxes_score = net.blobs['rois_score'].data
+    #import pdb;pdb.set_trace()
     # use softmax estimated probabilities
-    loss_cls = blobs_out['loss_cls']
+    #loss_cls = blobs_out['loss_cls']
     scores = net.blobs['score'].data # (1, 21, 562, 1000), resized image,
 
     # pick the label for maximum class
@@ -204,7 +207,7 @@ def im_seg(net, im, label):
     #    scores = scores[inv_index, :]
     #    pred_boxes = pred_boxes[inv_index, :]
 
-    return scores, boxes
+    return scores, boxes, boxes_score
 
 
 
@@ -262,6 +265,7 @@ def im_detect(net, im, boxes=None):
         assert len(im_scales) == 1, "Only single-image batch implemented"
         rois = net.blobs['rois'].data.copy()
         # unscale back to raw image space
+        #import pdb;pdb.set_trace()
         boxes = rois[:, 1:5] / im_scales[0]
 
     if cfg.TEST.SVM:
