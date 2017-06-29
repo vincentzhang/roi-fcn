@@ -17,6 +17,7 @@ import os
 from caffe.proto import caffe_pb2
 import google.protobuf as pb2
 import google.protobuf.text_format
+import surgery
 import ipdb
 
 class SolverWrapper(object):
@@ -47,6 +48,10 @@ class SolverWrapper(object):
             print ('Loading pretrained model '
                    'weights from {:s}').format(pretrained_model)
             self.solver.net.copy_from(pretrained_model)
+            # surgeries, bilinear interpolation
+            interp_layers = [k for k in self.solver.net.params.keys() if 'up' in k]
+            surgery.interp(self.solver.net, interp_layers)
+
 
         self.solver_param = caffe_pb2.SolverParameter()
         with open(solver_prototxt, 'rt') as f:

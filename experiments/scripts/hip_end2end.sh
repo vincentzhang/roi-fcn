@@ -40,7 +40,7 @@ exec &> >(tee -a "$LOG")
 echo Logging output to "$LOG"
 
 time ./tools/train_net.py --gpu ${GPU_ID} \
-  --solver models/${PT_DIR}/${NET}/hip_end2end/solver.prototxt \
+  --solver models/${PT_DIR}/${NET}/detect_end2end/solver.prototxt \
   --weights data/imagenet_models/VGG16_faster_rcnn_final-surgery-all.caffemodel \
   --imdb ${TRAIN_IMDB} \
   --iters ${ITERS} \

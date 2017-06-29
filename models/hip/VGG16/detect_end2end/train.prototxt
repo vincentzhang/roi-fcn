@@ -21,7 +21,7 @@ layer {
   python_param {
     module: 'roi_data_layer.img_layer'
     layer: 'RoIDataImgLayer'
-    param_str: "'num_classes': 21"
+    param_str: "'num_classes': 2"
   }
 }
 
@@ -581,7 +581,7 @@ layer {
   python_param {
     module: 'rpn.roi_target_layer'
     layer: 'RoITargetLayer'
-    param_str: "'num_classes': 21"
+    param_str: "'num_classes': 2"
   }
 }
 
@@ -689,11 +689,11 @@ layer {
 }
 layer {
   #name: "score_fr"
-  name: "cls_score"
+  name: "cls_score_2"
   type: "Convolution"
   bottom: "fc7"
   #top: "score_fr"
-  top: "cls_score"
+  top: "cls_score_2"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -703,17 +703,17 @@ layer {
     decay_mult: 0
   }
   convolution_param {
-    num_output: 21
+    num_output: 2
     pad: 0
     kernel_size: 1
-    #weight_filler {
-    #  type: "gaussian"
-    #  std: 0.01
-    #}
-    #bias_filler {
-    #  type: "constant"
-    #  value: 0
-    #}
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
   }
 }
 #layer {
@@ -763,16 +763,16 @@ layer {
 #  }
 #}
 layer {
-  name: "upscore"
+  name: "upscore2"
   type: "Deconvolution"
   #bottom: "score_fr"
-  bottom: "cls_score"
-  top: "upscore"
+  bottom: "cls_score_2"
+  top: "upscore2"
   param {
     lr_mult: 1
   }
   convolution_param {
-    num_output: 21
+    num_output: 2
     bias_term: false
     kernel_size: 32
     stride: 16
@@ -781,7 +781,7 @@ layer {
 layer {
   name: "score"
   type: "Crop"
-  bottom: "upscore"
+  bottom: "upscore2"
   bottom: "data"
   top: "score"
   crop_param {

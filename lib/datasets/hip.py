@@ -90,7 +90,7 @@ class hip(imdb):
         assert os.path.exists(image_set_file), \
                 'Path does not exist: {}'.format(image_set_file)
         with open(image_set_file) as f:
-            image_index = [x.strip().split(',')[0] for x in f.readlines()]
+            image_index = [x.strip().split(',')[0].split('.')[0] for x in f.readlines()]
         return image_index
 
     def label_path_at(self, i):
@@ -172,12 +172,17 @@ class hip(imdb):
         with open(image_set_file) as f: # only keep the numbers in the middle
             for x in f.readlines():
                 text = x.strip().split(',')
-                if text[0] == index:
+                if text[0].split('.')[0] == index:
                     # hard-code, assume only one box
                     boxes[0, :] = list(map(int, text[1:-1]))
+                    boxes[0, :] = boxes[0, :] - 1
                     gt_classes[0] = 1 #int(text[-1])
                     overlaps[0, 1] = 1.0
+                    seg_areas[0] = (boxes[0,2] - boxes[0,0] + 1) * (boxes[0,3]
+                            - boxes[0,1] + 1)
                     break
+
+        overlaps = scipy.sparse.csr_matrix(overlaps)
 
         return {'boxes' : boxes,
                 'gt_classes': gt_classes,
