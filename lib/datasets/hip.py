@@ -175,7 +175,10 @@ class hip(imdb):
                 if text[0].split('.')[0] == index:
                     # hard-code, assume only one box
                     boxes[0, :] = list(map(int, text[1:-1]))
-                    boxes[0, :] = boxes[0, :] - 1
+                    if boxes[0, 0] == 192:
+                        boxes[0, 0] = 191
+                    if boxes[0, 2] == 192:
+                        boxes[0, 2] = 191
                     gt_classes[0] = 1 #int(text[-1])
                     overlaps[0, 1] = 1.0
                     seg_areas[0] = (boxes[0,2] - boxes[0,0] + 1) * (boxes[0,3]
