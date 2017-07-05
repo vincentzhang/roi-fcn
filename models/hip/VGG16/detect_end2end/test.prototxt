@@ -572,10 +572,10 @@ layer {
   }
 }
 layer {
-  name: "cls_score"
+  name: "cls_score_2"
   type: "Convolution"
   bottom: "fc7"
-  top: "cls_score"
+  top: "cls_score_2"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -585,21 +585,21 @@ layer {
     decay_mult: 0
   }
   convolution_param {
-    num_output: 21
+    num_output: 2
     pad: 0
     kernel_size: 1
   }
 }
 layer {
-  name: "upscore"
+  name: "upscore2"
   type: "Deconvolution"
-  bottom: "cls_score"
-  top: "upscore"
+  bottom: "cls_score_2"
+  top: "upscore2"
   param {
     lr_mult: 1
   }
   convolution_param {
-    num_output: 21
+    num_output: 2
     bias_term: false
     kernel_size: 32
     stride: 16
@@ -608,7 +608,7 @@ layer {
 layer {
   name: "score"
   type: "Crop"
-  bottom: "upscore"
+  bottom: "upscore2"
   bottom: "data"
   top: "score"
   crop_param {
