@@ -81,7 +81,11 @@ class RoITargetLayer(caffe.Layer):
 
         # segmentation labels
         top[1].reshape(*img_labels.shape)
-        top[1].data[...] = img_labels
+        if self._num_classes == 2:
+            # scale label to [0,1] if only two classes
+            top[1].data[...] = img_labels/255
+        else:
+            top[1].data[...] = img_labels
 
     def backward(self, top, propagate_down, bottom):
         """This layer does not propagate gradients."""
