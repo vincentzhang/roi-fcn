@@ -55,7 +55,7 @@ def demo(net, image_name, img_path, label_path):
         label_obj = PIL.Image.open(label_file)
         show_label = True
     except:
-        # for test, there's no labels
+        # for pascal test, there's no labels
         show_label = False
         label_obj = PIL.Image.open("/data/repo/py-faster-rcnn/data/VOCdevkit2007/VOC2011/SegmentationClass/2007_000033.png")
     label = np.asarray(label_obj)
@@ -81,7 +81,6 @@ def vis_seg(im, im_pred, label, dets, cm, img_name='img', display_label=True,
     #ax.imshow(im[:,:,::-1]) # BGR->RGB
     ax.imshow(im[:,:,0], cmap=cm) # BGR->RGB
     ax.set_title('Original')
-    #pdb.set_trace()
     # Display all boxes
     keep = nms(dets, thresh)
     dets = dets[keep, :] # dets[:,:4]: bboxes; dets[-1]: score
@@ -109,7 +108,7 @@ def vis_seg(im, im_pred, label, dets, cm, img_name='img', display_label=True,
     #gs2.tight_layout(fig, rect=[0,0,1,1], h_pad=0.1)
     #plt.subplots_adjust(right=0.85)
     #fig.set_size_inches(8, 6)
-    fig.savefig('hip-rpn70k-{}.png'.format(img_name), bbox_inches='tight')
+    fig.savefig('hip-out-img/hip-rpn70k-2-{}.png'.format(img_name), bbox_inches='tight')
     plt.show()
     #plt.savefig('rpn70k-{}.png'.format(img_name),dpi=fig.dpi)# bbox_inches='tight',
 
@@ -142,7 +141,7 @@ def load_img_label(idx, img_path, label_path):
 
 if __name__ == '__main__':
     cfg.TEST.HAS_RPN = True  # Use RPN for proposals
-    cfg.TEST.RPN_POST_NMS_TOP_N = 20
+    cfg.TEST.RPN_POST_NMS_TOP_N = 1
     cfg.MODELS_DIR = osp.abspath(osp.join(cfg.ROOT_DIR, 'models', 'hip'))
 
     args = parse_args()
@@ -173,23 +172,29 @@ if __name__ == '__main__':
     #            '001763.jpg', '004545.jpg']
     # data/VOCdevkit2007/VOC2007/ImageSets/Segmentation/trainval.txt
     data_path = os.path.join(cfg.DATA_DIR, 'hip')
-    img_set_file = os.path.join(data_path, 'train_seg_img/myData_seg.txt')
-    img_path = os.path.join(data_path, 'train_seg_img') # ext: jpg
-    label_path = os.path.join(data_path, 'train_seg_label') # ext: jpg
+    # For Testing Data
+    img_set_file = os.path.join(data_path, 'test_seg_img/myData.txt')
+    img_path = os.path.join(data_path, 'test_seg_img') # ext: jpg
+    label_path = os.path.join(data_path, 'test_seg_label') # ext: jpg
+    # For Training Data
+    #img_set_file = os.path.join(data_path, 'train_seg_img/myData_seg.txt')
+    #img_path = os.path.join(data_path, 'train_seg_img') # ext: jpg
+    #label_path = os.path.join(data_path, 'train_seg_label') # ext: jpg
     assert os.path.exists(img_set_file), 'img file not exist'
     assert os.path.exists(img_path), 'img path not exist'
     assert os.path.exists(label_path), 'label path not exist'
     # load the images
     im_names = load_index_from_gt(img_set_file)
-    pdb.set_trace()
+    #pdb.set_trace()
     # for each image, do a forward pass and get the predicted pixel labels
     #im_names = ['000004.jpg', '000014.jpg', '000025.jpg', '000062.jpg',
     #            '000069.jpg', '000176.jpg']
-    for im_name in im_names[2:10]:
+    for im_name in im_names:#[5:10]:
+        im_name = "DeJa_1"
         #im_name = '2007_000032'
         #pdb.set_trace()
         print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-        print 'Demo for data/demo/{}'.format(im_name)
+        print 'Demo for {}/{}'.format(img_path, im_name)
         demo(net, im_name, img_path, label_path)
         break
 
