@@ -173,7 +173,7 @@ if __name__ == '__main__':
     # data/VOCdevkit2007/VOC2007/ImageSets/Segmentation/trainval.txt
     data_path = os.path.join(cfg.DATA_DIR, 'hip')
     # For Testing Data
-    img_set_file = os.path.join(data_path, 'test_seg_img/myData.txt')
+    img_set_file = os.path.join(data_path, 'test_seg_img/myData_seg.txt')
     img_path = os.path.join(data_path, 'test_seg_img') # ext: jpg
     label_path = os.path.join(data_path, 'test_seg_label') # ext: jpg
     # For Training Data

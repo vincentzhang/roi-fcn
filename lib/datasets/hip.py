@@ -86,7 +86,7 @@ class hip(imdb):
         # Example path to image set file:
         # self._devkit_path + /train_seg_img/myData_seg.txt
         image_set_file = os.path.join(self._data_path,
-                'train_seg_img/myData_seg.txt')
+                self._image_set+'_seg_img', 'myData_seg.txt')
         assert os.path.exists(image_set_file), \
                 'Path does not exist: {}'.format(image_set_file)
         with open(image_set_file) as f:
