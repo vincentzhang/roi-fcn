@@ -16,8 +16,12 @@ import cv2
 import caffe
 from fast_rcnn.nms_wrapper import nms
 import cPickle
-from utils.blob import im_list_to_blob,prep_im_and_label_for_blob,label_list_to_blob 
+from utils.blob import im_list_to_blob,prep_im_and_label_for_blob,label_list_to_blob
 import os
+import PIL
+from datetime import datetime
+import pdb
+from score import fast_hist
 
 def _get_image_blob(im):
     """Converts an image into a network input.
@@ -132,20 +136,23 @@ def _project_im_rois(im_rois, scales):
 
     return rois, levels
 
-def _get_blobs(im, rois):
+def _get_blobs(im, rois, label=None):
     """Convert an image and RoIs within that image into network inputs."""
     blobs = {'data' : None, 'rois' : None}
+    if label is not None:
+        # add img_labels if has labels
+        blobs['img_labels'] = label
     blobs['data'], im_scale_factors = _get_image_blob(im)
     if not cfg.TEST.HAS_RPN:
         blobs['rois'] = _get_rois_blob(rois, im_scale_factors)
     return blobs, im_scale_factors
 
-def _get_blobs_label(im, label):
-    blobs = {'data' : None, 'img_labels': None}
-    blobs['data'], im_scale_factors, blobs['img_labels'] = _get_image_label_blob(im, label)
-    return blobs, im_scale_factors
+#def _get_blobs_label(im, label):
+#    blobs = {'data' : None, 'img_labels': None}
+#    blobs['data'], im_scale_factors, blobs['img_labels'] = _get_image_label_blob(im, label)
+#    return blobs, im_scale_factors
 
-def im_seg(net, im, label):
+def im_seg(net, im, label=None):
     """
         Arguments:
             net (caffe.Net): Fast R-CNN network to use
@@ -154,8 +161,7 @@ def im_seg(net, im, label):
             pred (ndarray): pixel-wise prediction in object proposals
             boxes (ndarray): R x (4*K) array of predicted bounding boxes
     """
-    #blobs, im_scales = _get_blobs_label(im, label)
-    blobs, im_scales = _get_blobs(im, None)
+    blobs, im_scales = _get_blobs(im, None, label)
     if cfg.TEST.HAS_RPN:
         im_blob = blobs['data']
         # blobs['im_info']: H x W x scale_factor(transform the input image to
@@ -165,15 +171,16 @@ def im_seg(net, im, label):
             dtype=np.float32)
     # reshape network inputs
     net.blobs['data'].reshape(*(blobs['data'].shape))
-    #net.blobs['img_labels'].reshape(*(blobs['img_labels'].shape))
+    if label is not None:
+        net.blobs['img_labels'].reshape(*(blobs['img_labels'].shape))
     if cfg.TEST.HAS_RPN:
         net.blobs['im_info'].reshape(*(blobs['im_info'].shape))
     # do forward
     forward_kwargs = {'data': blobs['data'].astype(np.float32, copy=False)}
-    #forward_kwargs['img_labels'] = blobs['img_labels']
+    if label is not None:
+        forward_kwargs['img_labels'] = blobs['img_labels']
     if cfg.TEST.HAS_RPN:
         forward_kwargs['im_info'] = blobs['im_info'].astype(np.float32, copy=False)
-    #import pdb;pdb.set_trace()
     blobs_out = net.forward(**forward_kwargs)
 
     if cfg.TEST.HAS_RPN:
@@ -182,7 +189,6 @@ def im_seg(net, im, label):
         # unscale back to raw image space
         boxes = rois[:, 1:5] * 16 / im_scales[0] # remove after fix
         boxes_score = net.blobs['rois_score'].data
-    #import pdb;pdb.set_trace()
     # use softmax estimated probabilities
     #loss_cls = blobs_out['loss_cls']
     scores = net.blobs['score'].data # (1, 21, 562, 1000), resized image,
@@ -208,7 +214,6 @@ def im_seg(net, im, label):
     #    pred_boxes = pred_boxes[inv_index, :]
 
     return scores, boxes, boxes_score
-
 
 
 def im_detect(net, im, boxes=None):
@@ -306,9 +311,6 @@ def vis_detections(im, class_name, dets, thresh=0.3):
             plt.title('{}  {:.3f}'.format(class_name, score))
             plt.show()
 
-def vis_seg(im, class_name):
-    pass
-
 def apply_nms(all_boxes, thresh):
     """Apply non-maximum suppression to all predicted boxes output by the
     test_net method.
@@ -402,71 +404,65 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
     imdb.evaluate_detections(all_boxes, output_dir)
 
 def test_net_seg(net, imdb, max_per_image=100, thresh=0.05, vis=False):
-    """Test a Fast R-CNN network on an image database."""
-    num_images = len(imdb.image_index)
-    # all detections are collected into:
-    #    all_boxes[cls][image] = N x 5 array of detections in
-    #    (x1, y1, x2, y2, score)
-    all_boxes = [[[] for _ in xrange(num_images)]
-                 for _ in xrange(imdb.num_classes)]
+    """Test a RPN-FCN network on an image database."""
+    print 'Evaluating segmentations'
+    do_seg_tests(net, 0, os.path.join(imdb.data_path, 'pred{}'), imdb)
 
+def do_seg_tests(net, iter, save_format, imdb, layer='score', gt='label'):
+    if save_format:
+        save_format = save_format.format(iter)
+    hist = compute_hist_imdb(net, save_format, imdb, layer, gt)
+    # overall accuracy
+    acc = np.diag(hist).sum() / hist.sum()
+    print '>>>', datetime.now(), 'Iteration', iter, 'overall accuracy', acc
+    # per-class accuracy
+    acc = np.diag(hist) / hist.sum(1)
+    print '>>>', datetime.now(), 'Iteration', iter, 'mean accuracy', np.nanmean(acc)
+    # per-class IU
+    iu = np.diag(hist) / (hist.sum(1) + hist.sum(0) - np.diag(hist))
+    print '>>>', datetime.now(), 'Iteration', iter, 'mean IU', np.nanmean(iu)
+    freq = hist.sum(1) / hist.sum()
+    print '>>>', datetime.now(), 'Iteration', iter, 'fwavacc', \
+            (freq[freq > 0] * iu[freq > 0]).sum()
+    # per-class Dice Score / F1
+    dice = 2*iu/(1+iu)
+    print '>>>', datetime.now(), 'Iteration', iter, 'mean Dice Score', \
+            np.nanmean(dice)
+    return hist
+
+def compute_hist_imdb(net, save_dir, imdb, layer='score', gt='label',
+        loss_layer='loss_cls'):
+    n_cl = net.blobs[layer].channels
+    if save_dir and not os.path.exists(save_dir):
+        os.mkdir(save_dir)
+    hist = np.zeros((n_cl, n_cl))
     output_dir = get_output_dir(imdb, net)
-
     # timers
-    _t = {'im_detect' : Timer(), 'misc' : Timer()}
-
-    if not cfg.TEST.HAS_RPN:
-        roidb = imdb.roidb
-
+    _t = {'im_seg' : Timer()}
+    num_images = len(imdb.image_index)
     for i in xrange(num_images):
-        # filter out any ground truth boxes
-        if cfg.TEST.HAS_RPN:
-            box_proposals = None
-        else:
-            # The roidb may contain ground-truth rois (for example, if the roidb
-            # comes from the training or val split). We only want to evaluate
-            # detection on the *non*-ground-truth rois. We select those the rois
-            # that have the gt_classes field set to 0, which means there's no
-            # ground truth.
-            box_proposals = roidb[i]['boxes'][roidb[i]['gt_classes'] == 0]
-
+        # Load the demo image
         im = cv2.imread(imdb.image_path_at(i))
-        _t['im_detect'].tic()
-        scores, boxes = im_detect(net, im, box_proposals)
-        _t['im_detect'].toc()
+        # Load the label, in jpeg format
+        label = np.asarray(PIL.Image.open(imdb.label_path_at(i)))
+        # binarize the label
+        label = np.where(label > 127, 1, 0)
 
-        _t['misc'].tic()
-        # skip j = 0, because it's the background class
-        for j in xrange(1, imdb.num_classes):
-            inds = np.where(scores[:, j] > thresh)[0]
-            cls_scores = scores[inds, j]
-            cls_boxes = boxes[inds, j*4:(j+1)*4]
-            cls_dets = np.hstack((cls_boxes, cls_scores[:, np.newaxis])) \
-                .astype(np.float32, copy=False)
-            keep = nms(cls_dets, cfg.TEST.NMS)
-            cls_dets = cls_dets[keep, :]
-            if vis:
-                vis_detections(im, imdb.classes[j], cls_dets)
-            all_boxes[j][i] = cls_dets
+        # One forward pass
+        _t['im_seg'].tic()
+        im_pred, boxes, boxes_score = im_seg(net, im, label)
+        _t['im_seg'].toc()
 
-        # Limit to max_per_image detections *over all classes*
-        if max_per_image > 0:
-            image_scores = np.hstack([all_boxes[j][i][:, -1]
-                                      for j in xrange(1, imdb.num_classes)])
-            if len(image_scores) > max_per_image:
-                image_thresh = np.sort(image_scores)[-max_per_image]
-                for j in xrange(1, imdb.num_classes):
-                    keep = np.where(all_boxes[j][i][:, -1] >= image_thresh)[0]
-                    all_boxes[j][i] = all_boxes[j][i][keep, :]
-        _t['misc'].toc()
+        print 'im_seg: {:d}/{:d} {:.3f}s' \
+              .format(i + 1, num_images, _t['im_seg'].average_time)
 
-        print 'im_detect: {:d}/{:d} {:.3f}s {:.3f}s' \
-              .format(i + 1, num_images, _t['im_detect'].average_time,
-                      _t['misc'].average_time)
+        hist += fast_hist(label.flatten(), im_pred.flatten(), n_cl)
 
-    det_file = os.path.join(output_dir, 'detections.pkl')
-    with open(det_file, 'wb') as f:
-        cPickle.dump(all_boxes, f, cPickle.HIGHEST_PROTOCOL)
+        if save_dir:
+            # from {0,1} to {0,255} for image display purpose
+            im = PIL.Image.fromarray(im_pred*255, mode='L')
+            im.save(os.path.join(save_dir, imdb.image_index[i] + '.png'))
+        # compute the loss as well
+        #loss += net.blobs[loss_layer].data.flat[0]
+    return hist
 
-    print 'Evaluating detections'
-    imdb.evaluate_detections(all_boxes, output_dir)

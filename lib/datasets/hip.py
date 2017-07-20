@@ -63,6 +63,10 @@ class hip(imdb):
         ret = True
         return ret
 
+    @property
+    def data_path(self):
+        return self._data_path
+
     def image_path_at(self, i):
         """
         Return the absolute path to image i in the image sequence.
@@ -345,6 +349,12 @@ class hip(imdb):
                     continue
                 filename = self._get_voc_results_file_template().format(cls)
                 os.remove(filename)
+
+    def evaluate_seg(self, output_dir):
+        seg_file = os.path.join(output_dir, 'seg.pkl')
+        with open(seg_file, 'wb') as f:
+            cPickle.dump(all_seg, f, cPickle.HIGHEST_PROTOCOL)
+        # flatten the images and compute the IOU
 
     def competition_mode(self, on):
         if on:
