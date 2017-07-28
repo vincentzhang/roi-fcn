@@ -403,10 +403,13 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
     print 'Evaluating detections'
     imdb.evaluate_detections(all_boxes, output_dir)
 
-def test_net_seg(net, imdb, max_per_image=100, thresh=0.05, vis=False):
+def test_net_seg(net, imdb):
     """Test a RPN-FCN network on an image database."""
     print 'Evaluating segmentations'
-    do_seg_tests(net, 0, os.path.join(imdb.data_path, 'pred{}'), imdb)
+    # This is for saving the segmentation prediction to disk
+    #do_seg_tests(net, 0, os.path.join(imdb.data_path, 'pred{}'), imdb)
+    # This is for not saving the pred
+    do_seg_tests(net, 0, False, imdb)
 
 def do_seg_tests(net, iter, save_format, imdb, layer='score', gt='label'):
     if save_format:
@@ -424,8 +427,8 @@ def do_seg_tests(net, iter, save_format, imdb, layer='score', gt='label'):
     freq = hist.sum(1) / hist.sum()
     print '>>>', datetime.now(), 'Iteration', iter, 'fwavacc', \
             (freq[freq > 0] * iu[freq > 0]).sum()
-    # per-class Dice Score / F1
-    dice = 2*iu/(1+iu)
+    # per-class Dice Score / F1, dice = 2*iu/(1+iu)
+    dice = 2 * np.diag(hist) / (hist.sum(1) + hist.sum(0))
     print '>>>', datetime.now(), 'Iteration', iter, 'mean Dice Score', \
             np.nanmean(dice)
     return hist

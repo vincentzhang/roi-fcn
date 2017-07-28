@@ -16,7 +16,7 @@ from datasets.factory import get_imdb
 import caffe
 import argparse
 import pprint
-import time, os, sys
+import os, sys
 
 def parse_args():
     """
@@ -86,4 +86,4 @@ if __name__ == '__main__':
     if not cfg.TEST.HAS_RPN:
         imdb.set_proposal_method(cfg.TEST.PROPOSAL_METHOD)
 
-    test_net_seg(net, imdb, max_per_image=args.max_per_image, vis=args.vis)
+    test_net_seg(net, imdb)
