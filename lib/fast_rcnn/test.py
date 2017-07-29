@@ -157,9 +157,11 @@ def im_seg(net, im, label=None):
         Arguments:
             net (caffe.Net): Fast R-CNN network to use
             im (ndarray): color image to test (in BGR order)
+            label(ndarray): pixel-wise label for the input image
         Returns:
-            pred (ndarray): pixel-wise prediction in object proposals
+            scores (ndarray): pixel-wise prediction in object proposals
             boxes (ndarray): R x (4*K) array of predicted bounding boxes
+            boxes_score (ndarray): R x 1 array of scores for the predicted bounding boxes
     """
     blobs, im_scales = _get_blobs(im, None, label)
     if cfg.TEST.HAS_RPN:
@@ -189,8 +191,6 @@ def im_seg(net, im, label=None):
         # unscale back to raw image space
         boxes = rois[:, 1:5] * 16 / im_scales[0] # remove after fix
         boxes_score = net.blobs['rois_score'].data
-    # use softmax estimated probabilities
-    #loss_cls = blobs_out['loss_cls']
     scores = net.blobs['score'].data # (1, 21, 562, 1000), resized image,
 
     # pick the label for maximum class
@@ -198,20 +198,6 @@ def im_seg(net, im, label=None):
     # resize this scores to map back to the original size of the image
     scores = cv2.resize(scores[0,:,:], None, None, fx=1./im_scales[0], fy=1./im_scales[0],
                     interpolation=cv2.INTER_NEAREST)
-
-    #if cfg.TEST.BBOX_REG: # Default
-    #    # Apply bounding-box regression deltas
-    #    box_deltas = blobs_out['bbox_pred']
-    #    pred_boxes = bbox_transform_inv(boxes, box_deltas)
-    #    pred_boxes = clip_boxes(pred_boxes, im.shape)
-    #else:
-    #    # Simply repeat the boxes, once for each class
-    #    pred_boxes = np.tile(boxes, (1, scores.shape[1]))
-
-    #if cfg.DEDUP_BOXES > 0 and not cfg.TEST.HAS_RPN:
-    #    # Map scores and predictions back to the original set of boxes
-    #    scores = scores[inv_index, :]
-    #    pred_boxes = pred_boxes[inv_index, :]
 
     return scores, boxes, boxes_score
 
@@ -270,7 +256,6 @@ def im_detect(net, im, boxes=None):
         assert len(im_scales) == 1, "Only single-image batch implemented"
         rois = net.blobs['rois'].data.copy()
         # unscale back to raw image space
-        #import pdb;pdb.set_trace()
         boxes = rois[:, 1:5] / im_scales[0]
 
     if cfg.TEST.SVM:
@@ -409,12 +394,14 @@ def test_net_seg(net, imdb):
     # This is for saving the segmentation prediction to disk
     #do_seg_tests(net, 0, os.path.join(imdb.data_path, 'pred{}'), imdb)
     # This is for not saving the pred
-    do_seg_tests(net, 0, False, imdb)
+    do_seg_tests(net, 0, False, imdb, save_bbox = os.path.join(imdb.data_path,
+        'bbox_pred'))
 
-def do_seg_tests(net, iter, save_format, imdb, layer='score', gt='label'):
+def do_seg_tests(net, iter, save_format, imdb, layer='score', gt='label',
+        save_bbox = False):
     if save_format:
         save_format = save_format.format(iter)
-    hist = compute_hist_imdb(net, save_format, imdb, layer, gt)
+    hist = compute_hist_imdb(net, save_format, imdb, layer, gt, save_bbox)
     # overall accuracy
     acc = np.diag(hist).sum() / hist.sum()
     print '>>>', datetime.now(), 'Iteration', iter, 'overall accuracy', acc
@@ -434,10 +421,13 @@ def do_seg_tests(net, iter, save_format, imdb, layer='score', gt='label'):
     return hist
 
 def compute_hist_imdb(net, save_dir, imdb, layer='score', gt='label',
+        save_bbox_dir = False,
         loss_layer='loss_cls'):
     n_cl = net.blobs[layer].channels
     if save_dir and not os.path.exists(save_dir):
         os.mkdir(save_dir)
+    if save_bbox_dir and not os.path.exists(save_bbox_dir):
+        os.mkdir(save_bbox_dir)
     hist = np.zeros((n_cl, n_cl))
     output_dir = get_output_dir(imdb, net)
     # timers
@@ -465,6 +455,10 @@ def compute_hist_imdb(net, save_dir, imdb, layer='score', gt='label',
             # from {0,1} to {0,255} for image display purpose
             im = PIL.Image.fromarray(im_pred*255, mode='L')
             im.save(os.path.join(save_dir, imdb.image_index[i] + '.png'))
+        if save_bbox_dir:
+            #pdb.set_trace()
+            with open(os.path.join(save_bbox_dir, imdb.image_index[i]+'.txt'), "w") as text_file:
+                np.savetxt(text_file, np.hstack((boxes, boxes_score)), '%f')
         # compute the loss as well
         #loss += net.blobs[loss_layer].data.flat[0]
     return hist
