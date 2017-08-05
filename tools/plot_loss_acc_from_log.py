@@ -12,7 +12,8 @@ dir_name = "../experiments/logs/"
 
 #log_name = dir_name'detect_end2end_VGG16_.txt.2017-06-02_16-18-41'
 #'detect_end2end_VGG16_.txt.2017-05-21_14-53-36'
-fname = 'detect_end2end_VGG16_.txt.2017-06-02_16-30-06'
+#fname = 'detect_end2end_VGG16_.txt.2017-06-02_16-30-06'
+fname = 'hip_end2end_VGG16_.txt.2017-07-03_01-59-30'
 log_name = dir_name+fname
 
 # Plotting the loss
@@ -59,4 +60,4 @@ axarr[1].legend(['cls_loss','bbox_loss'])
 axarr[1].set_title("RPN Loss")
 plt.ion()
 plt.show()
-plt.savefig(dir_name+'imgs/train_loss_'+str(niter)+'.png', bbox_inches='tight')
+plt.savefig(dir_name+'imgs/hip_train_loss_'+str(niter)+'.png', bbox_inches='tight')

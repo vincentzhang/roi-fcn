@@ -388,20 +388,28 @@ def test_net(net, imdb, max_per_image=100, thresh=0.05, vis=False):
     print 'Evaluating detections'
     imdb.evaluate_detections(all_boxes, output_dir)
 
-def test_net_seg(net, imdb):
+def test_net_seg(net, imdb, suffix=''):
     """Test a RPN-FCN network on an image database."""
     print 'Evaluating segmentations'
     # This is for saving the segmentation prediction to disk
-    #do_seg_tests(net, 0, os.path.join(imdb.data_path, 'pred{}'), imdb)
+    #do_seg_tests(net, 0, os.path.join(imdb.data_path, 'pred{}'), imdb, suffix)
     # This is for not saving the pred
-    do_seg_tests(net, 0, False, imdb, save_bbox = os.path.join(imdb.data_path,
-        'bbox_pred'))
+    do_seg_tests(net, 0, False, imdb, suffix)
+    #do_seg_tests(net, 0, False, imdb, suffix, save_bbox = os.path.join(imdb.data_path,
+    #    'bbox_pred'))
 
-def do_seg_tests(net, iter, save_format, imdb, layer='score', gt='label',
+def do_seg_tests(net, iter, save_format, imdb, suffix, layer='score', gt='label',
         save_bbox = False):
     if save_format:
-        save_format = save_format.format(iter)
+        if 'socket' in imdb.name:
+            save_format = save_format.format('_socket'+suffix)
+        else:
+            save_format = save_format.format(str(iter)+'_'+suffix)
     hist = compute_hist_imdb(net, save_format, imdb, layer, gt, save_bbox)
+    compute_metrics(hist, iter)
+    return hist
+
+def compute_mean_metrics(hist, iter):
     # overall accuracy
     acc = np.diag(hist).sum() / hist.sum()
     print '>>>', datetime.now(), 'Iteration', iter, 'overall accuracy', acc
@@ -418,7 +426,27 @@ def do_seg_tests(net, iter, save_format, imdb, layer='score', gt='label',
     dice = 2 * np.diag(hist) / (hist.sum(1) + hist.sum(0))
     print '>>>', datetime.now(), 'Iteration', iter, 'mean Dice Score', \
             np.nanmean(dice)
-    return hist
+
+def compute_metrics(hist, iter):
+    # overall accuracy
+    acc = np.diag(hist).sum() / hist.sum()
+    print '>>>', datetime.now(), 'Iteration', iter, 'overall accuracy', acc
+    # positive-class accuracy
+    acc = np.diag(hist)[1] / hist.sum()
+    print '>>>', datetime.now(), 'Iteration', iter, 'accuracy', acc
+    # positive-class IU
+    iu = np.diag(hist)[1] / (hist[:,1].sum() + hist[1,:].sum() - np.diag(hist)[1])
+    print '>>>', datetime.now(), 'Iteration', iter, 'IU', iu
+    #freq = hist.sum(1) / hist.sum()
+    #print '>>>', datetime.now(), 'Iteration', iter, 'fwavacc', \
+    #        (freq[freq > 0] * iu[freq > 0]).sum()
+    # positive class Dice Score / F1, dice = 2*iu/(1+iu)
+    dice = 2 * np.diag(hist)[1] / (hist[:,1].sum() + hist[1,:].sum())
+    print '>>>', datetime.now(), 'Iteration', iter, 'Dice Score', \
+            dice
+    dice0 = 2*iu/(1+iu)
+    print '>>>', datetime.now(), 'Iteration', iter, 'Dice Score from IU', \
+            dice0
 
 def compute_hist_imdb(net, save_dir, imdb, layer='score', gt='label',
         save_bbox_dir = False,
@@ -428,18 +456,30 @@ def compute_hist_imdb(net, save_dir, imdb, layer='score', gt='label',
         os.mkdir(save_dir)
     if save_bbox_dir and not os.path.exists(save_bbox_dir):
         os.mkdir(save_bbox_dir)
+    if save_dir:
+        # show where to save the image
+        print("Pred will be saved to {}".format(save_dir))
     hist = np.zeros((n_cl, n_cl))
     output_dir = get_output_dir(imdb, net)
     # timers
     _t = {'im_seg' : Timer()}
     num_images = len(imdb.image_index)
+    is_jpg = '.jpg' in imdb.image_path_at(0)
     for i in xrange(num_images):
-        # Load the demo image
-        im = cv2.imread(imdb.image_path_at(i))
-        # Load the label, in jpeg format
-        label = np.asarray(PIL.Image.open(imdb.label_path_at(i)))
-        # binarize the label
-        label = np.where(label > 127, 1, 0)
+        if is_jpg:
+            # Load the demo image
+            im = cv2.imread(imdb.image_path_at(i))
+            # Load the label, in jpeg format
+            label = np.asarray(PIL.Image.open(imdb.label_path_at(i)))
+            # binarize the label
+            label = np.where(label > 127, 1, 0)
+        else:
+            # h5 file
+            vol_name, sliceidx = imdb.image_path_at(i).rsplit('_',1)
+            im = imdb.image_h5f[vol_name][:,:,int(sliceidx)]
+            im = np.dstack((im, im, im))
+            # this label is already binary
+            label = imdb.label_h5f[vol_name+'_mask'][:,:,int(sliceidx)]
 
         # One forward pass
         _t['im_seg'].tic()
@@ -461,5 +501,11 @@ def compute_hist_imdb(net, save_dir, imdb, layer='score', gt='label',
                 np.savetxt(text_file, np.hstack((boxes, boxes_score)), '%f')
         # compute the loss as well
         #loss += net.blobs[loss_layer].data.flat[0]
+    if save_dir:
+        hist_dir = os.path.join(save_dir, 'hist.txt')
+    else:
+        hist_dir = os.path.join(imdb.data_path, 'hist.txt')
+    with open(hist_dir, 'w') as hist_file:
+        np.savetxt(hist_file, hist, '%f')
     return hist
 

@@ -21,10 +21,24 @@ def prepare_roidb(imdb):
     each ground-truth box. The class with maximum overlap is also
     recorded.
     """
-    sizes = [PIL.Image.open(imdb.image_path_at(i)).size
-             for i in xrange(imdb.num_images)]
+    # PIL.Image.size returns tuple (width, height)
+    # when converted to numpy array, the shape becomes height, width
+    is_h5 = False
+    text = imdb.image_path_at(0)
+    if '.jpg' in text:
+        sizes = [PIL.Image.open(imdb.image_path_at(i)).size
+                for i in xrange(imdb.num_images)]
+    # socket: h5 file
+    else:
+        # sizes: [(width, height)]
+        sizes = [imdb.image_h5f[imdb.image_path_at(i).rsplit('_',1)[0]].shape[1::-1]
+                for i in xrange(imdb.num_images)]
+        is_h5 = True
     roidb = imdb.roidb
     for i in xrange(len(imdb.image_index)):
+        if is_h5:
+            roidb[i]['image_h5f'] = imdb.image_h5f
+            roidb[i]['label_h5f'] = imdb.label_h5f
         roidb[i]['image'] = imdb.image_path_at(i)
         if imdb.add_label:
             roidb[i]['img_labels'] = imdb.label_path_at(i)

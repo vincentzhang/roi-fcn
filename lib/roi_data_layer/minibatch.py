@@ -226,8 +226,17 @@ def _get_image_blob_and_label(roidb, scale_inds):
     processed_labels = []
     im_scales = []
     for i in xrange(num_images):
-        im = cv2.imread(roidb[i]['image'])
-        label = np.asarray(PIL.Image.open(roidb[i]['img_labels']))
+        text = roidb[i]['image']
+        if '.jpg' in text:
+            im = cv2.imread(text)
+            label = np.asarray(PIL.Image.open(roidb[i]['img_labels']))
+        else:
+            # h5 file
+            vol_name, sliceidx = text.rsplit('_',1)
+            #import pdb;pdb.set_trace()
+            im = roidb[i]['image_h5f'][vol_name][:,:,int(sliceidx)]
+            im = np.dstack((im, im, im))
+            label = roidb[i]['label_h5f'][vol_name+'_mask'][:,:,int(sliceidx)]
         if roidb[i]['flipped']:
             im = im[:, ::-1, :]
             label = label[:, ::-1]
