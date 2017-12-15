@@ -25,9 +25,11 @@ def prepare_roidb(imdb):
     # when converted to numpy array, the shape becomes height, width
     is_h5 = False
     text = imdb.image_path_at(0)
-    if '.jpg' in text:
-        sizes = [PIL.Image.open(imdb.image_path_at(i)).size
-                for i in xrange(imdb.num_images)]
+    if '.jpg' in text or '.png' in text:
+        #sizes = [PIL.Image.open(imdb.image_path_at(i)).size
+        #        for i in xrange(imdb.num_images)]
+        # TODO: update hip loader
+        sizes = imdb.get_size()
     # socket: h5 file
     else:
         # sizes: [(width, height)]

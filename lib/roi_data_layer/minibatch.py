@@ -84,6 +84,7 @@ def get_minibatch(roidb, num_classes):
 def get_minibatch_with_img_labels(roidb, num_classes):
     """Given a roidb, construct a minibatch sampled from it and also return the
     image pixel-wise labels"""
+    # Only support single image in the roidb for now
     num_images = len(roidb)
     # Sample random scales to use for each image in this batch
     random_scale_inds = npr.randint(0, high=len(cfg.TRAIN.SCALES),
@@ -227,7 +228,7 @@ def _get_image_blob_and_label(roidb, scale_inds):
     im_scales = []
     for i in xrange(num_images):
         text = roidb[i]['image']
-        if '.jpg' in text:
+        if '.jpg' in text or '.png' in text:
             im = cv2.imread(text)
             label = np.asarray(PIL.Image.open(roidb[i]['img_labels']))
         else:
