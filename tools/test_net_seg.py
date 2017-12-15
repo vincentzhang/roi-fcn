@@ -13,10 +13,11 @@ import _init_paths
 from fast_rcnn.test import test_net, test_net_seg
 from fast_rcnn.config import cfg, cfg_from_file, cfg_from_list
 from datasets.factory import get_imdb
+import os, sys
+#os.environ['GLOG_minloglevel'] = '1'
 import caffe
 import argparse
 import pprint
-import os, sys
 
 def parse_args():
     """
@@ -63,7 +64,6 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-
     print('Called with args:')
     print(args)
 
@@ -82,6 +82,7 @@ if __name__ == '__main__':
     caffe.set_mode_gpu()
     caffe.set_device(args.gpu_id)
     net = caffe.Net(args.prototxt, args.caffemodel, caffe.TEST)
+    #import pdb;pdb.set_trace()
     net.name = os.path.splitext(os.path.basename(args.caffemodel))[0]
 
     imdb = get_imdb(args.imdb_name)

@@ -1,10 +1,10 @@
 #!/bin/bash
 # Usage:
-# ./experiments/scripts/socket_end2end.sh GPU NET DATASET [options args to {train,test}_net.py]
+# ./experiments/scripts/socket_scratch_n_end2end.sh GPU NET DATASET [options args to {train,test}_net.py]
 # DATASET is hip.
 #
 # Example:
-# ./experiments/scripts/socket_end2end.sh 0 VGG16 socket\
+# ./experiments/scripts/socket_scratch_n_end2end.sh 0 VGG16 socket\
 #   --set EXP_DIR foobar RNG_SEED 42 TRAIN.SCALES "[400, 500, 600, 700]"
 
 set -x
@@ -35,16 +35,18 @@ case $DATASET in
     ;;
 esac
 
-LOG="experiments/logs/socket_end2end_${NET}_${EXTRA_ARGS_SLUG}.txt.`date +'%Y-%m-%d_%H-%M-%S'`"
+LOG="experiments/logs/socket_scratch_n_m_fg_resume_end2end_${NET}_${EXTRA_ARGS_SLUG}.txt.`date +'%Y-%m-%d_%H-%M-%S'`"
 exec &> >(tee -a "$LOG")
 echo Logging output to "$LOG"
 
+#--weights data/imagenet_models/VGG16.v2.fcn-surgery-all.caffemodel \
+
 time ./tools/train_net.py --gpu ${GPU_ID} \
-  --solver models/${PT_DIR}/${NET}/detect_end2end/solver.prototxt \
-  --weights data/imagenet_models/VGG16_faster_rcnn_final-surgery-all.caffemodel \
+  --solver models/${PT_DIR}/${NET}/detect_end2end/solver_scratch_n_fg.prototxt \
+  --weights output/socket_scratch_end2end/socket_train/vgg16_detect_socket_scratch_n_m_fg_1e-05_iter_70000.caffemodel \
   --imdb ${TRAIN_IMDB} \
   --iters ${ITERS} \
-  --cfg experiments/cfgs/socket_imgnet_mean_end2end.yml \
+  --cfg experiments/cfgs/socket_scratch_n_fg_end2end.yml \
   ${EXTRA_ARGS}
 
 set +x

@@ -31,14 +31,19 @@ def prepare_roidb(imdb):
     # socket: h5 file
     else:
         # sizes: [(width, height)]
-        sizes = [imdb.image_h5f[imdb.image_path_at(i).rsplit('_',1)[0]].shape[1::-1]
-                for i in xrange(imdb.num_images)]
+        #sizes = [imdb.image_h5f[imdb.image_path_at(i).rsplit('_',1)[0]].shape[1::-1]
+        #        for i in xrange(imdb.num_images)]
+        sizes = imdb.get_size()
         is_h5 = True
     roidb = imdb.roidb
     for i in xrange(len(imdb.image_index)):
         if is_h5:
-            roidb[i]['image_h5f'] = imdb.image_h5f
-            roidb[i]['label_h5f'] = imdb.label_h5f
+            #roidb[i]['image_h5f'] = imdb.image_h5f
+            #roidb[i]['label_h5f'] = imdb.label_h5f
+            # contains the image and label
+            vol_name, sliceidx = imdb.image_path_at(i).rsplit('_',1)
+            roidb[i]['image_h5f'] = imdb.get_image(vol_name, int(sliceidx))
+            roidb[i]['label_h5f'] = imdb.get_label(vol_name, int(sliceidx))
         roidb[i]['image'] = imdb.image_path_at(i)
         if imdb.add_label:
             roidb[i]['img_labels'] = imdb.label_path_at(i)

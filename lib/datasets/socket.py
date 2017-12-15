@@ -24,7 +24,7 @@ import pdb
 
 
 class socket(imdb):
-    def __init__(self, image_set, devkit_path=None):
+    def __init__(self, image_set, use_empty=False, devkit_path=None, vol=None):
         imdb.__init__(self, 'socket_' + image_set)
         self._image_set = image_set
         self._devkit_path = self._get_default_path() if devkit_path is None \
@@ -42,14 +42,22 @@ class socket(imdb):
                          'foreground')
         self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
         self._vol_names = self._get_vol_names()
+        #self._vol_names = self._get_vol_names(vol="Me6401IM_0063")#"So2601IM_0022")
         self._image_ext = '.h5'
         self._label_ext = '.h5'
-        self._h5_name = 'seg_band'# 'seg'
-        self._imagedb_name = os.path.join(self._data_path, self._h5_name+'.h5')
+        #self._h5_name = 'seg_band' # 'seg'
+        self._h5_name = 'cropped_seg_band' # for bbox directory'
+        #train_socket_data_u.h5
+        # for training/ vol-specific testing
+        #self._imagedb_name = os.path.join(self._data_path, self._h5_name+'.h5')
+        # for overall testing on cropped data
+        self._imagedb_name = os.path.join(self._data_path,
+                self._image_set+'_socket_data_u.h5')
         #self._imagedb_name = os.path.join(self._data_path, 'seg.h5')
         # handle to the hdf5 file
         self._image_h5f = h5py.File(self._imagedb_name, 'r')
-        self._label_h5f = h5py.File(os.path.join(self._data_path, self._h5_name+'_mask.h5'), 'r')
+        self._label_h5f = h5py.File(os.path.join(self._data_path, self._image_set+'_socket_label_u.h5'), 'r')
+        #self._label_h5f = h5py.File(os.path.join(self._data_path, self._h5_name+'_mask.h5'), 'r')
         #self._label_h5f = h5py.File(os.path.join(self._data_path, 'seg_mask.h5'), 'r')
         # socket specific config options
         self.config = {'cleanup'     : True,
@@ -57,8 +65,8 @@ class socket(imdb):
                        'matlab_eval' : False,
                        'use_empty'   : False}
         # use_empty: True to use the empty slices that do not contain bboxes
-        #pdb.set_trace()
-        if self._image_set == 'test':
+        #if self._image_set == 'test' or use_empty:
+        if use_empty:
             self.config['use_empty'] = True
 
         self._image_index = self._load_image_set_index()
@@ -89,7 +97,11 @@ class socket(imdb):
     def label_h5f(self):
         return self._label_h5f
 
-    def _get_vol_names(self):
+    def _get_vol_names(self, vol=None):
+        #pdb.set_trace()
+        if vol:
+            print("vol is: ", vol)
+            return [vol]
         vol_file = os.path.join(self._data_path, self._image_set + '.txt')
         assert os.path.exists(vol_file), \
                 'vol path does not exist: {}'.format(vol_file)
@@ -102,6 +114,20 @@ class socket(imdb):
         # h5: height, width, slice
         # return [self._image_h5f[self._vol_names[i]].shape[1] for i in xrange(self.num_images)]
         return [self._image_h5f[self._image_index[i].rsplit('_',1)[0]].shape[1] for i in xrange(self.num_images)]
+
+    def get_size(self):
+        sizes = [self._image_h5f[self._image_index[i].rsplit('_',1)[0]].shape[1::-1]
+                for i in xrange(self.num_images)]
+        return sizes
+
+    def get_image(self, vol_name, idx):
+        im = self._image_h5f[vol_name][:,:,idx]
+        return im
+
+    def get_label(self, vol_name, idx):
+        """ Binary label """
+        label = np.asarray(self._label_h5f[vol_name+'_mask'][:,:,idx], dtype='uint8')
+        return label
 
     def image_path_at(self, i):
         """

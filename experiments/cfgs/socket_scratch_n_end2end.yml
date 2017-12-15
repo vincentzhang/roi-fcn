@@ -1,4 +1,4 @@
-EXP_DIR: socket_end2end 
+EXP_DIR: socket_scratch_end2end
 TRAIN:
   HAS_RPN: True
   SCALES: [600,]
@@ -7,6 +7,7 @@ TRAIN:
   RPN_POSITIVE_OVERLAP: 0.7
   RPN_BATCHSIZE: 256
   PROPOSAL_METHOD: gt
+  BATCH_SIZE: 50
   BG_THRESH_LO: 0.0
   FG_FRACTION: 1.0
   SNAPSHOT_ITERS: 4586

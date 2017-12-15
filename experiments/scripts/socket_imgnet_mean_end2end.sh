@@ -1,10 +1,10 @@
 #!/bin/bash
 # Usage:
-# ./experiments/scripts/socket_end2end.sh GPU NET DATASET [options args to {train,test}_net.py]
+# ./experiments/scripts/socket_imgnet_mean_end2end.sh GPU NET DATASET [options args to {train,test}_net.py]
 # DATASET is hip.
 #
 # Example:
-# ./experiments/scripts/socket_end2end.sh 0 VGG16 socket\
+# ./experiments/scripts/socket_imgnet_mean_end2end.sh 0 VGG16 socket\
 #   --set EXP_DIR foobar RNG_SEED 42 TRAIN.SCALES "[400, 500, 600, 700]"
 
 set -x
@@ -39,9 +39,10 @@ LOG="experiments/logs/socket_end2end_${NET}_${EXTRA_ARGS_SLUG}.txt.`date +'%Y-%m
 exec &> >(tee -a "$LOG")
 echo Logging output to "$LOG"
 
+#--weights data/imagenet_models/VGG16_faster_rcnn_final-surgery-all.caffemodel \
 time ./tools/train_net.py --gpu ${GPU_ID} \
-  --solver models/${PT_DIR}/${NET}/detect_end2end/solver.prototxt \
-  --weights data/imagenet_models/VGG16_faster_rcnn_final-surgery-all.caffemodel \
+  --solver models/${PT_DIR}/${NET}/detect_end2end/solver_imgnet_mean.prototxt \
+  --weights output/socket_end2end/socket_train/vgg16_detect_socket_roitopdiff_1e-10_iter_22930.caffemodel \
   --imdb ${TRAIN_IMDB} \
   --iters ${ITERS} \
   --cfg experiments/cfgs/socket_imgnet_mean_end2end.yml \

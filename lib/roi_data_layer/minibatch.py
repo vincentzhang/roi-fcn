@@ -233,10 +233,9 @@ def _get_image_blob_and_label(roidb, scale_inds):
         else:
             # h5 file
             vol_name, sliceidx = text.rsplit('_',1)
-            #import pdb;pdb.set_trace()
-            im = roidb[i]['image_h5f'][vol_name][:,:,int(sliceidx)]
+            im = roidb[i]['image_h5f']
             im = np.dstack((im, im, im))
-            label = roidb[i]['label_h5f'][vol_name+'_mask'][:,:,int(sliceidx)]
+            label = roidb[i]['label_h5f']
         if roidb[i]['flipped']:
             im = im[:, ::-1, :]
             label = label[:, ::-1]

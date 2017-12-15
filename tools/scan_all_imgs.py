@@ -5,10 +5,13 @@ import os
 
 import pdb
 
-#img_path = "data/socket/pred_socket"
-img_path = "data/socket/pred_socket4000"
+img_path = "data/socket/pred_socket"
+#img_path = "data/socket/pred_socket4000"
 def main():
     total = 0
+    if not os.path.exists(img_path):
+        print("Path {} does not exist".format(img_path))
+        return
     for root, _, files in os.walk(img_path):
         for f in files:
             if '.png' in f:

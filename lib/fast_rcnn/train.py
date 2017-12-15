@@ -18,7 +18,7 @@ from caffe.proto import caffe_pb2
 import google.protobuf as pb2
 import google.protobuf.text_format
 import surgery
-import ipdb
+import pdb
 
 class SolverWrapper(object):
     """A simple wrapper around Caffe's solver.
@@ -52,7 +52,6 @@ class SolverWrapper(object):
             interp_layers = [k for k in self.solver.net.params.keys() if 'up' in k]
             surgery.interp(self.solver.net, interp_layers)
 
-
         self.solver_param = caffe_pb2.SolverParameter()
         with open(solver_prototxt, 'rt') as f:
             pb2.text_format.Merge(f.read(), self.solver_param)
@@ -83,7 +82,8 @@ class SolverWrapper(object):
 
         infix = ('_' + cfg.TRAIN.SNAPSHOT_INFIX
                  if cfg.TRAIN.SNAPSHOT_INFIX != '' else '')
-        filename = (self.solver_param.snapshot_prefix + infix +
+        filename = (self.solver_param.snapshot_prefix +
+                '_{:.0e}'.format(self.solver_param.base_lr) + infix +
                     '_iter_{:d}'.format(self.solver.iter) + '.caffemodel')
         filename = os.path.join(self.output_dir, filename)
 
@@ -101,6 +101,7 @@ class SolverWrapper(object):
         last_snapshot_iter = -1
         timer = Timer()
         model_paths = []
+        #import pdb;pdb.set_trace()
         while self.solver.iter < max_iters:
             # Make one SGD update
             timer.tic()
@@ -112,18 +113,22 @@ class SolverWrapper(object):
             if self.solver.iter % cfg.TRAIN.SNAPSHOT_ITERS == 0:
                 last_snapshot_iter = self.solver.iter
                 model_paths.append(self.snapshot())
-                #ipdb.set_trace()
 
         if last_snapshot_iter != self.solver.iter:
-            pass
-         #  model_paths.append(self.snapshot())
+            model_paths.append(self.snapshot())
         return model_paths
 
 def get_training_roidb(imdb):
     """Returns a roidb (Region of Interest database) for use in training."""
     if cfg.TRAIN.USE_FLIPPED:
         print 'Appending horizontally-flipped training examples...'
+        print 'There are {} images before'.format(imdb.num_images)
         imdb.append_flipped_images()
+        print 'There are {} images after'.format(imdb.num_images)
+        print 'Updating snapshot interval'
+        print 'Original: {}'.format(cfg.TRAIN.SNAPSHOT_ITERS)
+        cfg.TRAIN.SNAPSHOT_ITERS = imdb.num_images
+        print 'Updated to one epoch: {}'.format(cfg.TRAIN.SNAPSHOT_ITERS)
         print 'done'
 
     print 'Preparing training data...'

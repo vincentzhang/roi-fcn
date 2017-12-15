@@ -65,6 +65,15 @@ class pascal_voc(imdb):
         if self._set == "Segmentation":
             ret = True
         return ret
+    
+    @property
+    def data_path(self):
+        return self._data_path
+
+    def get_label(self, idx):
+        """  Load the label, in png format, range [0,255] """
+        label = np.asarray(PIL.Image.open(self.label_path_at(idx)), dtype='uint8')
+        return label
 
     def image_path_at(self, i):
         """

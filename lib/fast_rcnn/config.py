@@ -259,7 +259,6 @@ def cfg_from_file(filename):
     import yaml
     with open(filename, 'r') as f:
         yaml_cfg = edict(yaml.load(f))
-
     _merge_a_into_b(yaml_cfg, __C)
 
 def cfg_from_list(cfg_list):

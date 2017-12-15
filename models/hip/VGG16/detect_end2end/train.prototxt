@@ -800,7 +800,7 @@ layer {
   top: "loss_cls"
   loss_weight: 1
   loss_param {
-    ignore_label: 255
+    #ignore_label: 255
     normalize: false # normalize by the batch size, consistent with FCN
   }
 }

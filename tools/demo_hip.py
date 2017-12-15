@@ -190,7 +190,7 @@ if __name__ == '__main__':
     #im_names = ['000004.jpg', '000014.jpg', '000025.jpg', '000062.jpg',
     #            '000069.jpg', '000176.jpg']
     for im_name in im_names:#[5:10]:
-        im_name = "DeJa_1"
+        im_name = "DeJa_100"
         #im_name = '2007_000032'
         #pdb.set_trace()
         print '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
