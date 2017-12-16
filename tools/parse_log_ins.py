@@ -5,8 +5,6 @@ import sys
 if len(sys.argv) == 2:
     logname = '../experiments/logs/' + sys.argv[-1]
 else:
-#logname = '../experiments/logs/ins_scratch_n_m_fg10_end2end_VGG16_.txt.2017-12-15_17-07-50'
-#logname = '../experiments/logs/ins_scratch_n_m_fg50_end2end_VGG16_.txt.2017-12-15_17-38-48'
     logname = '../experiments/logs/ins_scratch_n_m_fg50_e-4_end2end_VGG16_.txt.2017-12-15_18-19-33'
 #  1389 I1215 02:24:18.601630 27007 solver.cpp:218] Iteration 0 (0 iter/s,
 #          1.70903s/1 iters), loss = 1.38895                                                                                                         

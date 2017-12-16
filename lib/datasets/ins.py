@@ -113,9 +113,9 @@ class ins(imdb):
         """
         Construct an image path from the image's "index" identifier.
         """
-        #print("index is ",index)
         image_path = os.path.join(self._data_path, 'images',
                 'data_'+index+self._label_ext)
+        #print("Image is at: ", image_path)
         assert os.path.exists(image_path), \
                 'Path does not exist: {}'.format(image_path)
         return image_path
@@ -152,6 +152,7 @@ class ins(imdb):
         """
         label_path = os.path.join(self._data_path,
                 'labels', 'label_'+index + self._label_ext)
+        #print("Label is at: ", label_path)
         assert os.path.exists(label_path), \
                 'Label Path does not exist: {}'.format(label_path)
         return label_path
