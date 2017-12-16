@@ -35,14 +35,14 @@ case $DATASET in
     ;;
 esac
 
-LOG="experiments/logs/ins_scratch_n_m_fg50_e-4_end2end_${NET}_${EXTRA_ARGS_SLUG}.txt.`date +'%Y-%m-%d_%H-%M-%S'`"
+LOG="experiments/logs/ins_scratch_n_m_fg50_e-3_end2end_${NET}_${EXTRA_ARGS_SLUG}.txt.`date +'%Y-%m-%d_%H-%M-%S'`"
 exec &> >(tee -a "$LOG")
 echo Logging output to "$LOG"
 
 #--weights data/imagenet_models/VGG16.v2.fcn-surgery-all.caffemodel \
 
 time ./tools/train_net.py --gpu ${GPU_ID} \
-  --solver models/${PT_DIR}/${NET}/detect_end2end/solver_scratch_n_fg50_e-4.prototxt \
+  --solver models/${PT_DIR}/${NET}/detect_end2end/solver_scratch_n_fg50_e-3.prototxt \
   --weights data/imagenet_models/VGG16.v2.fcn-surgery-all.caffemodel \
   --imdb ${TRAIN_IMDB} \
   --iters ${ITERS} \
