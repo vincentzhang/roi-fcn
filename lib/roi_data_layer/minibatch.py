@@ -229,7 +229,7 @@ def _get_image_blob_and_label(roidb, scale_inds):
     for i in xrange(num_images):
         text = roidb[i]['image']
         if '.jpg' in text or '.png' in text:
-            im = cv2.imread(text)
+            im = cv2.imread(text) # already BGR
             label = np.asarray(PIL.Image.open(roidb[i]['img_labels']))
         else:
             # h5 file

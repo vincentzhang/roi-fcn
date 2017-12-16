@@ -19,6 +19,7 @@ from voc_eval import voc_eval
 from fast_rcnn.config import cfg
 import PIL
 import h5py
+import cv2
 import pdb
 
 
@@ -44,17 +45,6 @@ class ins(imdb):
         #self._vol_names = self._get_vol_names(vol="Me6401IM_0063")#"So2601IM_0022")
         self._image_ext = '.png'
         self._label_ext = '.png'
-        #self._h5_name = 'cropped_seg_band' # for bbox directory'
-        #train_socket_data_u.h5
-        # for training/ vol-specific testing
-        #self._imagedb_name = os.path.join(self._data_path, self._h5_name+'.h5')
-        # for overall testing on cropped data
-        #self._imagedb_name = os.path.join(self._data_path,
-        #        self._image_set+'_socket_data_u.h5')
-        #self._imagedb_name = os.path.join(self._data_path, 'seg.h5')
-        # handle to the hdf5 file
-        #self._image_h5f = h5py.File(self._imagedb_name, 'r')
-        #self._label_h5f = h5py.File(os.path.join(self._data_path, self._image_set+'_socket_label_u.h5'), 'r')
         # ins specific config options
         self.config = {'cleanup'     : True,
                        'use_salt'    : True,
@@ -102,14 +92,16 @@ class ins(imdb):
                 for i in xrange(self.num_images)]
         return sizes
 
-    #def get_image(self, vol_name, idx):
-    #    im = self._image_h5f[vol_name][:,:,idx]
-    #    return im
+    def get_image(self, i):
+        return cv2.imread(self.image_path_at(i))
 
-    #def get_label(self, idx):
-    #    """ Binary set {0,1} """
-    #    label = np.asarray(PIL.Image.open(self.label_path_at(idx)), dtype='uint8')
-    #    return label
+    def get_label(self, i):
+        """ Binary set {0,1} """
+        return np.asarray(PIL.Image.open(self.label_path_at(i)), dtype='uint8')
+
+    def get_bbox(self, i):
+        """ Return a dictionary that contains bbox coordinates """
+        return self._load_ins_annotation(self._image_index[i])
 
     def image_path_at(self, i):
         """
@@ -121,6 +113,7 @@ class ins(imdb):
         """
         Construct an image path from the image's "index" identifier.
         """
+        #print("index is ",index)
         image_path = os.path.join(self._data_path, 'images',
                 'data_'+index+self._label_ext)
         assert os.path.exists(image_path), \
@@ -196,7 +189,7 @@ class ins(imdb):
 
         This function loads/saves from/to a cache file to speed up future calls.
         """
-        pass
+        assert False, 'not supposed to call this function'
         cache_file = os.path.join(self.cache_path, self.name + '_gt_img_labels.pkl')
         if os.path.exists(cache_file):
             with open(cache_file, 'rb') as fid:
@@ -219,7 +212,7 @@ class ins(imdb):
         # labeldir
         vol_name, sliceidx = index.rsplit('_',1)
         image_set_file = os.path.join(self._data_path,
-                'bbox', 'bbox' + vol_name + '.txt')
+                'bbox', 'bbox_' + vol_name + '.txt')
         assert os.path.exists(image_set_file), \
                 'Loading ins annotations: path does not exist: {}'.format(image_set_file)
 
@@ -242,12 +235,13 @@ class ins(imdb):
 
                 # Load object bounding boxes into a data frame.
                 for ix in range(num_objs):
-                    # 0-based
-                    boxes[ix, :] = text[2+ix*4,3+ix*4, 4+ix*4, 5+ix*4]
+                    # 0-based, x1,y1,x2,y2
+                    boxes[ix, :] = [float(text[2+ix*4]), float(text[3+ix*4]),
+                            float(text[4+ix*4]),
+                            float(text[5+ix*4]) ]
                     gt_classes[ix] = 1
                     overlaps[ix, 1] = 1.0
-                    seg_areas[ix] = (boxes[ix,2] - boxes[0] + 1) * (boxes[ix,3]
-                            -boxes[ix,1] + 1)
+                    seg_areas[ix] = (boxes[ix,2] - boxes[ix, 0] + 1) * (boxes[ix,3] - boxes[ix,1] + 1)
                 break
 
         overlaps = scipy.sparse.csr_matrix(overlaps)

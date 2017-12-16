@@ -155,6 +155,7 @@ def _fast_sample_rois(all_rois, gt_boxes, fg_rois_per_image, rois_per_image, num
     # Guard against the case when an image has fewer than fg_rois_per_image
     # foreground RoIs
     fg_rois_per_this_image = min(fg_rois_per_image, fg_inds.size)
+    #import pdb;pdb.set_trace()
 
     # Sample foreground regions without replacement
     if fg_inds.size > 0:
@@ -172,7 +173,6 @@ def _fast_sample_rois(all_rois, gt_boxes, fg_rois_per_image, rois_per_image, num
         # if fg_inds has nothing => no fg
         # Proposal ROIs (0, x1, y1, x2, y2) coming from RPN
         rois = np.zeros((1,5))
-        #import pdb;pdb.set_trace()
         print("This iteration has no fg prediction bbox")
         bbox_targets = None
         bbox_inside_weights = None 

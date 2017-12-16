@@ -476,7 +476,7 @@ def compute_metrics_flat(hist, iter):
         print('>>>{}, Iteration {}, accuracy: {}, precision: {}, recall: {}, IOU: {}, Dice: {}'.format(datetime.now(), iter, acc, prec, recall, iu, dice))
     else:
         dice = 2 * np.diag(hist) / (hist.sum(1) + hist.sum(0) + eps)
-        print('>>>{}, Iteration {}, accuracy: {}, recall: {}, precision: {}, mean IOU: {}, mean Dice: {}'.format(datetime.now(), iter, acc, recall, prec, np.nanmean(iu), np.nanmean(dice)))
+        print('>>>{}, Iteration {}, accuracy: {}, precision: {}, recall: {}, mean IOU: {}, mean Dice: {}'.format(datetime.now(), iter, acc, prec, recall, np.nanmean(iu), np.nanmean(dice)))
 
 def compute_hist_imdb(net, save_dir, imdb, layer='score', gt='label',
         save_bbox_dir = False,
@@ -494,15 +494,15 @@ def compute_hist_imdb(net, save_dir, imdb, layer='score', gt='label',
     # timers
     _t = {'im_seg' : Timer()}
     num_images = len(imdb.image_index)
-    is_jpg = '.jpg' in imdb.image_path_at(0)
+    is_jpg = '.jpg' in imdb.image_path_at(0) or '.png' in imdb.image_path_at(0)
     #import pdb;pdb.set_trace()
     for i in xrange(num_images):
         if is_jpg:
             # Load the demo image
             im = cv2.imread(imdb.image_path_at(i))
             # Load the label, in jpeg format
-            label = imdb.get_label(i)
-            #label = np.asarray(PIL.Image.open(imdb.label_path_at(i)))
+            #label = imdb.get_label(i)
+            label = np.asarray(PIL.Image.open(imdb.label_path_at(i)))
             # binarize the label
             #label = np.where(label > 127, 1, 0)
         else:

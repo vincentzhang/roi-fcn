@@ -58,7 +58,6 @@ def parse_args():
     return args
 
 def combined_roidb(imdb_names):
-    #import pdb; pdb.set_trace()
     def get_roidb(imdb_name):
         imdb = get_imdb(imdb_name)
         print 'Loaded dataset `{:s}` for training'.format(imdb.name)

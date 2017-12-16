@@ -16,6 +16,7 @@ from roi_data_layer.minibatch import get_minibatch_with_img_labels
 import numpy as np
 import yaml
 from multiprocessing import Process, Queue
+import pdb
 
 class RoIDataImgLayer(caffe.Layer):
     """RPN-FCN data layer used for training."""
@@ -29,6 +30,7 @@ class RoIDataImgLayer(caffe.Layer):
             vert = np.logical_not(horz)
             horz_inds = np.where(horz)[0]
             vert_inds = np.where(vert)[0]
+            #pdb.set_trace()
             inds = np.hstack((
                 np.random.permutation(horz_inds),
                 np.random.permutation(vert_inds)))

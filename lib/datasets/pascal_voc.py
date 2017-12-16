@@ -18,7 +18,7 @@ import subprocess
 import uuid
 from voc_eval import voc_eval
 from fast_rcnn.config import cfg
-import ipdb
+import pdb
 import PIL
 
 class pascal_voc(imdb):
