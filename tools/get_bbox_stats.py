@@ -1,18 +1,26 @@
+""" This script collect the statistics about the bouding boxes of a specified dataset """
+
 from __future__ import print_function
 import pickle
 from PIL import Image
 import numpy as np
 import _init_paths
 from datasets.factory import get_imdb
+import sys
 import pdb
 
-IMDB="ins_train_partial"
+IMDB="ins_train_partial" # default image DB
 CLASSES = ('background',
            'foreground')
 
 def main():
     # first read an image from the DB
+    global IMDB
+    if len(sys.argv) > 1:
+        IMDB = sys.argv[1]
     imdb = get_imdb(IMDB)
+    print("Dataset: {}. Total number of images: {}".format(IMDB,
+        imdb.num_images))
     xmin = 1000
     xmax = 0
     ymin = 1000
@@ -38,7 +46,6 @@ def main():
             ymin = min(box[1], ymin)
             xmax = max(box[2], xmax)
             ymax = max(box[3], ymax)
-        #pdb.set_trace()
         #_ = raw_input("Press [enter] to continue.") # wait for input from the user
     # get stats
     mean_width = np.mean(widths)

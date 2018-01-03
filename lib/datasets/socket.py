@@ -128,6 +128,10 @@ class socket(imdb):
         label = np.asarray(self._label_h5f[vol_name+'_mask'][:,:,idx], dtype='uint8')
         return label
 
+    def get_bbox(self, i):
+        """ Return a dictionary that contains bbox coordinates """
+        return self._load_socket_annotation(self._image_index[i])
+
     def image_path_at(self, i):
         """
         Return the absolute path to image i in the image sequence.
