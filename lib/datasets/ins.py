@@ -237,12 +237,25 @@ class ins(imdb):
                 # Load object bounding boxes into a data frame.
                 for ix in range(num_objs):
                     # 0-based, x1,y1,x2,y2
-                    boxes[ix, :] = [float(text[2+ix*4]), float(text[3+ix*4]),
-                            float(text[4+ix*4]),
-                            float(text[5+ix*4]) ]
+                    x1 = float(text[2+ix*4])
+                    y1 = float(text[3+ix*4])
+                    x2 = float(text[4+ix*4])
+                    y2 = float(text[5+ix*4])
+                    #if (x1 == x2) and (y1 == y2): # remove entries with area of 1
+                    #    continue
+                    boxes[ix, :] = [x1, y1, x2, y2]
                     gt_classes[ix] = 1
                     overlaps[ix, 1] = 1.0
                     seg_areas[ix] = (boxes[ix,2] - boxes[ix, 0] + 1) * (boxes[ix,3] - boxes[ix,1] + 1)
+                # check if any area is 1
+                mask = np.ones(num_objs, dtype=bool)
+                for obj_id, area in enumerate(seg_areas):
+                    if area <= 5:
+                        mask[obj_id] = False
+                boxes = boxes[mask, :]
+                gt_classes = gt_classes[mask]
+                overlaps = overlaps[mask, :] 
+                seg_areas = seg_areas[mask]
                 break
 
         overlaps = scipy.sparse.csr_matrix(overlaps)
