@@ -98,7 +98,6 @@ class socket(imdb):
         return self._label_h5f
 
     def _get_vol_names(self, vol=None):
-        #pdb.set_trace()
         if vol:
             print("vol is: ", vol)
             return [vol]
@@ -134,7 +133,6 @@ class socket(imdb):
         Return the absolute path to image i in the image sequence.
         """
         # return self.image_path_from_index(self._image_index[i])
-        #return self._imagedb_name
         return self._image_index[i]
 
     def image_path_from_index(self, index):

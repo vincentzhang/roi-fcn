@@ -146,6 +146,7 @@ class ProposalLayer(caffe.Layer):
             keep = keep[:post_nms_topN]
         proposals = proposals[keep, :]
         scores = scores[keep]
+        # somehow save it during inference
         #print("The number of proposals: {}".format(len(proposals)))
 
         # Output rois blob

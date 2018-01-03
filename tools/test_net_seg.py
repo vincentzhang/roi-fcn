@@ -43,6 +43,9 @@ def parse_args():
     parser.add_argument('--suffix', dest='suffix',
                         help='suffix to the save dir',
                         default='', type=str)
+    parser.add_argument('--bbox', dest='bbox',
+                        help='if to save bbox ',
+                        default=None, type=int)
     parser.add_argument('--comp', dest='comp_mode', help='competition mode',
                         action='store_true')
     parser.add_argument('--set', dest='set_cfgs',
@@ -90,4 +93,4 @@ if __name__ == '__main__':
     if not cfg.TEST.HAS_RPN:
         imdb.set_proposal_method(cfg.TEST.PROPOSAL_METHOD)
 
-    test_net_seg(net, imdb, args.suffix)
+    test_net_seg(net, imdb, args.suffix, args.bbox)
