@@ -60,7 +60,9 @@ def main():
     print("BBox statistics:")
     print("Width min,max,mean: {},{},{}".format(min_width, max_width, mean_width))
     print("Height min,max,mean: {},{},{}".format(min_height, max_height, mean_height))
-    print("Area min,max,mean: {},{},{}".format(min_area, max_area, mean_area))
+    print("Area min,max,mean: {:.0f},{:.0f},{:.0f}".format(min_area, max_area, mean_area))
+    print("Side length min,max,mean: {:.1f},{:.1f},{:.1f}".format(np.sqrt(min_area),
+        np.sqrt(max_area), np.sqrt(mean_area)))
     print("x min,max: {},{}".format(xmin,xmax))
     print("y min,max: {},{}".format(ymin,ymax))
 
