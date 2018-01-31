@@ -35,6 +35,7 @@ time ./tools/test_net_seg.py --gpu ${GPU_ID} \
    --net ${NET_FINAL} \
    --imdb ${TEST_IMDB} \
    --cfg experiments/cfgs/socket_scratch_n_fg50_end2end.yml \
-   --suffix ${ITER}
+   --suffix ${ITER} \
+   --bbox 1
 done
 

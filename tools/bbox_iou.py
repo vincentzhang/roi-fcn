@@ -2,6 +2,7 @@ import _init_paths
 import os
 from utils.cython_bbox import bbox_overlaps
 import numpy as np
+import pdb
 
 data_path = '../data/socket'
 
@@ -35,6 +36,18 @@ def load_image_set_index(vol_names, use_empty=False):
     return image_index
 
 def read_bbox(index, keep, use_empty=False):
+    """ Docstring
+
+    Args:
+        index: index of an image in this format
+                volname_sliceidx
+        keep:  the number of bbox to keep
+        use_empty(optinal): whether to use slices that do not contain positives
+
+    Returns:
+        iou: the iou of predicted bbox and gt bbox
+    """
+
     # indices: list of [vol_sliceidx]
     vol_name, sliceidx = index.rsplit('_',1)
     image_set_file = os.path.join(data_path,
@@ -45,13 +58,14 @@ def read_bbox(index, keep, use_empty=False):
             'Loading socket prediction: path does not exist: {}'.format(image_set_file)
     assert os.path.exists(gt_file),\
             'Loading socket gt : path does not exist: {}'.format(gt_file)
-
+    #print("Image Set File is {}".format(image_set_file))
     with open(image_set_file) as f: # only keep the numbers in the middle
-        idx = 0
         for x in f:
-            if idx != int(sliceidx):
-                # if not the slice, continue to the next 
-                idx += 1
+            # idx is the parsed image index
+            idx = x.strip().split(',',1)[0]
+            if idx != index:
+                # if not the slice, continue to the next
+                #print("idx: {}; index: {}".format(idx, index))
                 continue
             text = x.strip().split(',')
             # text: vol_sliceidx, num_bbox, confidence, x1,y1,x2,y2
@@ -64,11 +78,11 @@ def read_bbox(index, keep, use_empty=False):
             #pred_boxes = list(map(float, text[3:]))
             break # break after reading this line
     with open(gt_file) as gt_f:
-        idx = 0
         for x in gt_f:
-            if idx != int(sliceidx):
-                # if not the slice, continue to the next 
-                idx += 1
+            idx = x.strip().split(',',1)[0]
+            if idx != index:
+                # if not the slice, continue to the next
+                #print("idx: {}; index: {}".format(idx, index))
                 continue
             text = x.strip().split(',')
             # text: vol_sliceidx, num_bbox, x1,y1,x2,y2
@@ -80,7 +94,6 @@ def read_bbox(index, keep, use_empty=False):
     #import pdb;pdb.set_trace()
     iou = compute_iou(gt_boxes, pred_boxes[:keep,:])
     #2.72479564
-    #import pdb;pdb.set_trace()
     #return pred_boxes, gt_boxes
     return iou
 
@@ -92,10 +105,20 @@ def compute_iou(gt, pred):
     #print("shape of pred", pred.shape)
     mask_pred = mask_from_box(pred)
     mask_gt = mask_from_box(gt)
-    val = mask_pred & mask_gt
-    val = val.sum()
-    #val = float(val)/float(mask_gt.sum())
-    val = float(val)/(367.*192.)
+    I = mask_pred & mask_gt # IOU between pred and gt
+    #U = mask_pred | mask_gt # union
+    #val = mask_gt # to get the IOU between gt and the img
+    I = mask_pred # to get the IOU between pred and the img
+    #val = val.sum()
+    I = I.sum()
+    #U = U.sum()
+    # for real IOU
+    #val = float(I)/float(U)
+    # for gt bbox
+    #val = float(I)/float(mask_gt.sum())
+
+    # for full image
+    val = float(I)/(367.*192.)
     #for idx in xrange(gt.shape[0]):
     #    print("idx {}/{} ".format(idx, gt.shape[0]))
     # overlaps: (rois x gt_boxes)
@@ -109,8 +132,14 @@ def compute_iou(gt, pred):
     return val
 
 def mask_from_box(boxes):
-    # num x 4
-    # mask: image size
+    """ Return a binary mask of the same size as the image
+
+    Args:
+        boxes: num_boxes x 4
+
+    Returns:
+        mask: same size as the image
+    """
     mask = np.zeros((367,192),dtype=bool)
     for box in boxes:
         mask[int(box[1]):int(box[3]+0.5)+1,int(box[0]):int(box[2]+0.5)+1]= True
@@ -118,10 +147,14 @@ def mask_from_box(boxes):
 
 def get_iou():
     #vol_names = get_vol_names('test', 'Me6401IM_0063')
+    # This loads all the volumes available
+    #pdb.set_trace()
+    #vol_names = get_vol_names('train')
     vol_names = get_vol_names('test')
     img_idx = load_image_set_index(vol_names)
+    # 1, 10, 20, 30, ... 300
+    # a list of num_box, each representing the number of boxes to sample
     num_list = [1] + [10 * i for i in list(range(1,31))]
-    #import pdb;pdb.set_trace()
     mean_list = []
     for num_box in num_list:
         all_pred = []
@@ -145,5 +178,6 @@ def get_iou():
         print("mean iou of {} box: {}".format(num_box, all_iou.mean()))
         mean_list.append(all_iou.mean())
     #np.save('mean_iou',mean_list)
-    np.save('mean_iou_with_img',mean_list)
+    #np.save('mean_iou_with_img',mean_list)
+
 get_iou()

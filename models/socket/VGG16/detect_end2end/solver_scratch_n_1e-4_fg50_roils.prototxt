@@ -1,0 +1,21 @@
+train_net: "models/socket/VGG16/detect_end2end/train_scratch_n_roi_loss.prototxt"
+base_lr: 1e-4
+#0.001
+lr_policy: "step"
+gamma: 0.1
+stepsize: 50000
+display: 1
+average_loss: 100
+# iter_size: 1
+momentum: 0.9
+weight_decay: 0.0005
+# We disable standard caffe solver snapshotting and implement our own snapshot
+# function
+snapshot: 0
+# We still use the snapshot prefix, though
+# n: normalized loss
+# m: actual mean
+# fg50: 50 ROIs in the training
+# roils: ROI loss
+snapshot_prefix: "vgg16_socket_scratch_n_m_1e-4_fg50_roils"
+iter_size: 2

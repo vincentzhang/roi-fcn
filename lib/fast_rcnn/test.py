@@ -546,9 +546,7 @@ def compute_hist_imdb(net, save_dir, imdb, layer='score', gt='label',
             with open(os.path.join(save_bbox_dir, vol_name+'.txt'),"a") as text_file:
                 # format of the line:
                 # volname_sliceidx, num_of_boxes, 
-                #num_box = 50#boxes.shape[0]
                 num_box = boxes.shape[0]
-                #num_box = 1
                 #pdb.set_trace()
                 text_file.write("{}_{},{}".format(vol_name,sliceidx,num_box))
                 for box_id in xrange(num_box):
