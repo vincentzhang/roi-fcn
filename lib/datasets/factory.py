@@ -14,6 +14,7 @@ from datasets.coco import coco
 from datasets.hip import hip
 from datasets.hip import hiph5
 from datasets.socket import socket
+from datasets.acce import acce
 from datasets.ins import ins
 import numpy as np
 
@@ -53,6 +54,14 @@ for split in ['train', 'test']:
         name = 'socket_{}_{}'.format(split, subset)
         use_empty = False if subset == 'partial' else True
         __sets[name] = (lambda split=split, use_empty=use_empty: socket(split, use_empty))
+
+# Set up acce_<split>
+for split in ['train', 'test']:
+    for subset in ['partial', 'all']:
+        name = 'acce_{}_{}'.format(split, subset)
+        use_empty = False if subset == 'partial' else True
+        __sets[name] = (lambda split=split, use_empty=use_empty: acce(split, use_empty))
+
 
 # Set up ins_<split>
 for split in ['train', 'test']:
