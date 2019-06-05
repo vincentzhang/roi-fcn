@@ -56,7 +56,12 @@ class RoITargetLayer(caffe.Layer):
 
         # Sample rois with classification labels and bounding box regression
         # targets
-        labels, rois, bbox_targets, bbox_inside_weights = _sample_rois(
+        # comment out for now for testing
+        #labels, rois, bbox_targets, bbox_inside_weights = _sample_rois(
+        #    all_rois, gt_boxes, fg_rois_per_image,
+        #    rois_per_image, self._num_classes)
+        
+        labels, rois, bbox_targets, bbox_inside_weights = _fast_sample_rois(
             all_rois, gt_boxes, fg_rois_per_image,
             rois_per_image, self._num_classes)
 
@@ -73,7 +78,6 @@ class RoITargetLayer(caffe.Layer):
         # sampled rois
         top[0].reshape(*rois.shape)
         top[0].data[...] = rois
-        #import pdb; pdb.set_trace()
 
         # classification labels
         #top[1].reshape(*labels.shape)
@@ -82,6 +86,11 @@ class RoITargetLayer(caffe.Layer):
         # segmentation labels
         top[1].reshape(*img_labels.shape)
         top[1].data[...] = img_labels
+        #if self._num_classes == 2:
+        #    # scale label to [0,1] if only two classes
+        #    top[1].data[...] = img_labels/255
+        #else:
+        #    top[1].data[...] = img_labels
 
     def backward(self, top, propagate_down, bottom):
         """This layer does not propagate gradients."""
@@ -104,7 +113,6 @@ def _get_bbox_regression_labels(bbox_target_data, num_classes):
         bbox_inside_weights (ndarray): N x 4K blob of loss weights
     """
 
-    #import pdb;pdb.set_trace()
     clss = bbox_target_data[:, 0]
     bbox_targets = np.zeros((clss.size, 4 * num_classes), dtype=np.float32)
     bbox_inside_weights = np.zeros(bbox_targets.shape, dtype=np.float32)
@@ -132,6 +140,44 @@ def _compute_targets(ex_rois, gt_rois, labels):
                 / np.array(cfg.TRAIN.BBOX_NORMALIZE_STDS))
     return np.hstack(
             (labels[:, np.newaxis], targets)).astype(np.float32, copy=False)
+
+def _fast_sample_rois(all_rois, gt_boxes, fg_rois_per_image, rois_per_image, num_classes):
+    """Generate a random sample of RoIs comprising foreground examples."""
+    # overlaps: (rois x gt_boxes)
+    overlaps = bbox_overlaps(
+        np.ascontiguousarray(all_rois[:, 1:5], dtype=np.float),
+        np.ascontiguousarray(gt_boxes[:, :4], dtype=np.float))
+    gt_assignment = overlaps.argmax(axis=1)
+    max_overlaps = overlaps.max(axis=1)
+
+    # Select foreground RoIs as those with >= FG_THRESH overlap
+    fg_inds = np.where(max_overlaps >= cfg.TRAIN.FG_THRESH)[0]
+    # Guard against the case when an image has fewer than fg_rois_per_image
+    # foreground RoIs
+    fg_rois_per_this_image = min(fg_rois_per_image, fg_inds.size)
+    #import pdb;pdb.set_trace()
+
+    # Sample foreground regions without replacement
+    if fg_inds.size > 0:
+        fg_inds = npr.choice(fg_inds, size=fg_rois_per_this_image, replace=False)
+        # The indices that we're selecting (only fg)
+        keep_inds = fg_inds
+        rois = all_rois[keep_inds]
+        bbox_targets = None
+        bbox_inside_weights = None 
+        #bbox_target_data = _compute_targets(
+        #    rois[:, 1:5], gt_boxes[gt_assignment[keep_inds], :4], labels)
+        #bbox_targets, bbox_inside_weights = \
+        #    _get_bbox_regression_labels(bbox_target_data, num_classes)
+    else:
+        # if fg_inds has nothing => no fg
+        # Proposal ROIs (0, x1, y1, x2, y2) coming from RPN
+        rois = np.zeros((1,5))
+        print("This iteration has no fg prediction bbox")
+        bbox_targets = None
+        bbox_inside_weights = None 
+
+    return None, rois, bbox_targets, bbox_inside_weights 
 
 def _sample_rois(all_rois, gt_boxes, fg_rois_per_image, rois_per_image, num_classes):
     """Generate a random sample of RoIs comprising foreground and background
@@ -168,6 +214,7 @@ def _sample_rois(all_rois, gt_boxes, fg_rois_per_image, rois_per_image, num_clas
 
     # The indices that we're selecting (both fg and bg)
     keep_inds = np.append(fg_inds, bg_inds)
+
     # Select sampled values from various arrays:
     labels = labels[keep_inds]
     # Clamp labels for the background RoIs to 0

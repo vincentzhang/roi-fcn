@@ -1,4 +1,4 @@
 [submodule "caffe-fast-rcnn"]
 	path = caffe-fast-rcnn
 	url = git@github.com:vincentzhang/caffe-rpn-fcn.git
-	branch = master 
+	branch = cudnn6
