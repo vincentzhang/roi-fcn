@@ -1,4 +1,3 @@
 [submodule "caffe-roi"]
 	path = caffe-roi
 	url = git@github.com:vincentzhang/caffe-roi.git
-	branch = master
