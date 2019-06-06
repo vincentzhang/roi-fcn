@@ -1,9 +1,6 @@
 ## Overview
-This repo contains the code for ROI convolution based FCN. It is largely based on the [Faster R-CNN code](https://github.com/rbgirshick/py-faster-rcnn)
-
-## Citing this work 
-
-If you find Faster-RCNN-FCN useful in your research, please consider citing:
+This repo contains the code for ROI-FCN: ROI convolution based FCN, described in the following paper.
+If you find it useful in your research, please consider citing:
 
     @inproceedings{zhang2018end,
         title={End-to-end detection-segmentation network with ROI convolution},
@@ -14,6 +11,7 @@ If you find Faster-RCNN-FCN useful in your research, please consider citing:
         organization={IEEE}
     }
 
+It is largely based on the [Faster R-CNN code](https://github.com/rbgirshick/py-faster-rcnn)
 
 ## Contents
 1. [Installation](#installation)
