@@ -1,107 +1,59 @@
-### Disclaimer
+## Overview
+This repo contains the code for ROI convolution based FCN. It is largely based on the [Faster R-CNN code](https://github.com/rbgirshick/py-faster-rcnn)
 
-The official Faster R-CNN code (written in MATLAB) is available [here](https://github.com/ShaoqingRen/faster_rcnn).
-If your goal is to reproduce the results in our NIPS 2015 paper, please use the [official code](https://github.com/ShaoqingRen/faster_rcnn).
+## Citing this work 
 
-This repository contains a Python *reimplementation* of the MATLAB code.
-This Python implementation is built on a fork of [Fast R-CNN](https://github.com/rbgirshick/fast-rcnn).
-There are slight differences between the two implementations.
-In particular, this Python port
- - is ~10% slower at test-time, because some operations execute on the CPU in Python layers (e.g., 220ms / image vs. 200ms / image for VGG16)
- - gives similar, but not exactly the same, mAP as the MATLAB version
- - is *not compatible* with models trained using the MATLAB code due to the minor implementation differences
- - **includes approximate joint training** that is 1.5x faster than alternating optimization (for VGG16) -- see these [slides](https://www.dropbox.com/s/xtr4yd4i5e0vw8g/iccv15_tutorial_training_rbg.pdf?dl=0) for more information
+If you find Faster-RCNN-FCN useful in your research, please consider citing:
 
-# *Faster* R-CNN: Towards Real-Time Object Detection with Region Proposal Networks
-
-By Shaoqing Ren, Kaiming He, Ross Girshick, Jian Sun (Microsoft Research)
-
-This Python implementation contains contributions from Sean Bell (Cornell) written during an MSR internship.
-
-Please see the official [README.md](https://github.com/ShaoqingRen/faster_rcnn/blob/master/README.md) for more details.
-
-Faster R-CNN was initially described in an [arXiv tech report](http://arxiv.org/abs/1506.01497) and was subsequently published in NIPS 2015.
-
-### License
-
-Faster R-CNN is released under the MIT License (refer to the LICENSE file for details).
-
-### Citing Faster R-CNN
-
-If you find Faster R-CNN useful in your research, please consider citing:
-
-    @inproceedings{renNIPS15fasterrcnn,
-        Author = {Shaoqing Ren and Kaiming He and Ross Girshick and Jian Sun},
-        Title = {Faster {R-CNN}: Towards Real-Time Object Detection
-                 with Region Proposal Networks},
-        Booktitle = {Advances in Neural Information Processing Systems ({NIPS})},
-        Year = {2015}
+    @inproceedings{zhang2018end,
+        title={End-to-end detection-segmentation network with ROI convolution},
+        author={Zhang, Zichen and Tang, Min and Cobzas, Dana and Zonoobi, Dornoosh and Jagersand, Martin and Jaremko, Jacob L},
+        booktitle={2018 IEEE 15th International Symposium on Biomedical Imaging (ISBI 2018)},
+        pages={1509--1512},
+        year={2018},
+        organization={IEEE}
     }
 
-### Contents
-1. [Requirements: software](#requirements-software)
-2. [Requirements: hardware](#requirements-hardware)
-3. [Basic installation](#installation-sufficient-for-the-demo)
-4. [Demo](#demo)
-5. [Beyond the demo: training and testing](#beyond-the-demo-installation-for-training-and-testing-models)
+
+## Contents
+1. [Installation](#installation)
+3. [Demo](#demo)
+5. [Training and testing](#training-and-testing-models)
 6. [Usage](#usage)
 
-### Requirements: software
+### Basic installation 
 
-1. Requirements for `Caffe` and `pycaffe` (see: [Caffe installation instructions](http://caffe.berkeleyvision.org/installation.html))
-
-  **Note:** Caffe *must* be built with support for Python layers!
-
-  ```make
-  # In your Makefile.config, make sure to have this line uncommented
-  WITH_PYTHON_LAYER := 1
-  # Unrelatedly, it's also recommended that you use CUDNN
-  USE_CUDNN := 1
-  ```
-
-  You can download my [Makefile.config](http://www.cs.berkeley.edu/~rbg/fast-rcnn-data/Makefile.config) for reference.
-2. Python packages you might not have: `cython`, `python-opencv`, `easydict`
-3. [Optional] MATLAB is required for **official** PASCAL VOC evaluation only. The code now includes unofficial Python evaluation code.
-
-### Requirements: hardware
-
-1. For training smaller networks (ZF, VGG_CNN_M_1024) a good GPU (e.g., Titan, K20, K40, ...) with at least 3G of memory suffices
-2. For training Fast R-CNN with VGG16, you'll need a K40 (~11G of memory)
-3. For training the end-to-end version of Faster R-CNN with VGG16, 3G of GPU memory is sufficient (using CUDNN)
-
-### Installation (sufficient for the demo)
-
-1. Clone the Faster R-CNN repository
+1. Clone this repository
   ```Shell
   # Make sure to clone with --recursive
-  git clone --recursive https://github.com/rbgirshick/py-faster-rcnn.git
+  git clone --recursive https://github.com/vincentzhang/roi-fcn.git 
+  ```
+  If you didn't clone with the `--recursive` flag, then you'll need to manually clone the `caffe-roi` submodule:
+  ```Shell
+    git submodule update --init --recursive
   ```
 
-2. We'll call the directory that you cloned Faster R-CNN into `FRCN_ROOT`
-
-   *Ignore notes 1 and 2 if you followed step 1 above.*
-
-   **Note 1:** If you didn't clone Faster R-CNN with the `--recursive` flag, then you'll need to manually clone the `caffe-fast-rcnn` submodule:
+2. Build Caffe and pycaffe
+  **Note:** Caffe *must* be built with support for Python layers!
     ```Shell
-    git submodule update --init --recursive
-    ```
-    **Note 2:** The `caffe-fast-rcnn` submodule needs to be on the `faster-rcnn` branch (or equivalent detached state). This will happen automatically *if you followed step 1 instructions*.
-
-3. Build the Cython modules
-    ```Shell
-    cd $FRCN_ROOT/lib
-    make
-    ```
-
-4. Build Caffe and pycaffe
-    ```Shell
-    cd $FRCN_ROOT/caffe-fast-rcnn
+    # ROOT refers to the directory that you cloned this repo into.
+    cd $ROOT/caffe-roi
     # Now follow the Caffe installation instructions here:
     #   http://caffe.berkeleyvision.org/installation.html
 
-    # If you're experienced with Caffe and have all of the requirements installed
-    # and your Makefile.config in place, then simply do:
+    # In your Makefile.config, make sure to have this line uncommented
+    WITH_PYTHON_LAYER := 1
+    # Unrelatedly, it's also recommended that you use CUDNN
+    USE_CUDNN := 1
+    # Compile
     make -j8 && make pycaffe
+    ```
+  You can download my [Makefile.config](https://drive.google.com/open?id=1NSeWp7INxGWUrSdCTCwol8NmV_0-Ar5k) for reference.
+
+3. Build the Cython modules
+    ```Shell
+    cd $ROOT/lib
+    make
     ```
 
 5. Download pre-computed Faster R-CNN detectors
