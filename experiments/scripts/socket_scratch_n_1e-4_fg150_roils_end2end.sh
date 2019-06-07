@@ -1,11 +1,10 @@
 #!/bin/bash
 # Usage:
 # ./experiments/scripts/socket_scratch_n_fg150_roils_end2end.sh GPU NET DATASET [options args to {train,test}_net.py]
-# DATASET is hip.
+# DATASET is socket.
 #
 # Example:
-# ./experiments/scripts/socket_scratch_n_1e-4_fg150_roils_end2end.sh 0 VGG16 socket\
-#   --set EXP_DIR foobar RNG_SEED 42 TRAIN.SCALES "[400, 500, 600, 700]"
+# ./experiments/scripts/socket_scratch_n_1e-4_fg150_roils_end2end.sh 0 VGG16 socket
 
 set -x
 set -e
