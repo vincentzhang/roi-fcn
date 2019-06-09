@@ -1,5 +1,6 @@
 ## Overview
 This repo contains the code for ROI-FCN: ROI convolution based FCN, described in the following paper.
+
 If you find it useful in your research, please consider citing:
 
     @inproceedings{zhang2018end,
@@ -39,10 +40,11 @@ The key difference is that we add the [ROI convolution layer in caffe](https://g
     # Now follow the Caffe installation instructions here:
     #   http://caffe.berkeleyvision.org/installation.html
 
-    # In your Makefile.config, make sure to have this line uncommented
-    WITH_PYTHON_LAYER := 1
-    # Unrelatedly, it's also recommended that you use CUDNN
-    USE_CUDNN := 1
+        # In your Makefile.config, make sure to have this line uncommented
+            WITH_PYTHON_LAYER := 1
+        # Unrelatedly, it's also recommended that you use CUDNN
+            USE_CUDNN := 1
+
     # Compile
     make -j8 && make pycaffe
     ```
@@ -75,6 +77,7 @@ cd $ROOT
 python ./tools/demo.py
 ```
 The demo runs the segmentation network trained on the acetabulum data used in the paper.
+
 To show the generalization of the algorithm, the input images stored in `$ROOT/data/samples` are anonymized clinical images that are not in the training or testing dataset.
 
 ### Training
