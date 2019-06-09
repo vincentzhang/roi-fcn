@@ -12,14 +12,14 @@ If you find it useful in your research, please consider citing:
     }
 
 It is largely based on the [Faster R-CNN code](https://github.com/rbgirshick/py-faster-rcnn)
+The key difference is that we add the [ROI convolution layer in caffe](https://github.com/vincentzhang/caffe-roi/tree/73bc351c318402635e7220211740b1d44170d13d)
 
 ## Contents
 1. [Installation](#installation)
-3. [Demo](#demo)
-5. [Training and testing](#training-and-testing-models)
-6. [Usage](#usage)
+2. [Demo](#demo)
+3. [Training and testing](#training-and-testing)
 
-### Basic installation 
+### Installation 
 
 1. Clone this repository
   ```Shell
@@ -54,114 +54,58 @@ It is largely based on the [Faster R-CNN code](https://github.com/rbgirshick/py-
     make
     ```
 
-5. Download pre-computed Faster R-CNN detectors
+4. Download the ImageNet pre-trained VGG16 weights (adapted to be fully convolutional):
     ```Shell
-    cd $FRCN_ROOT
-    ./data/scripts/fetch_faster_rcnn_models.sh
+    cd $ROOT/data/scripts
+    ./fetch_vgg16_fcn.sh
     ```
 
-    This will populate the `$FRCN_ROOT/data` folder with `faster_rcnn_models`. See `data/README.md` for details.
-    These models were trained on VOC 2007 trainval.
+    This will populate the `$ROOT/data/imagenet_models` folder with `VGG16.v2.fcn-surgery-all.caffemodel`.
 
 ### Demo
 
-*After successfully completing [basic installation](#installation-sufficient-for-the-demo)*, you'll be ready to run the demo.
-
-To run the demo
+To run the demo, first download the pretrained weights:
 ```Shell
-cd $FRCN_ROOT
-./tools/demo.py
+cd $ROOT/data/scripts
+./fetch_socket_models.sh
 ```
-The demo performs detection using a VGG16 network trained for detection on PASCAL VOC 2007.
+Run the demo script:
+```Shell
+cd $ROOT
+python ./tools/demo.py
+```
+The demo runs the segmentation network trained on the acetabulum data used in the paper.
+To show the generalization of the algorithm, the input images stored in `$ROOT/data/samples` are anonymized clinical images that are not in the training or testing dataset.
 
-### Beyond the demo: installation for training and testing models
-1. Download the training, validation, test data and VOCdevkit
+### Training
 
-	```Shell
-	wget http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtrainval_06-Nov-2007.tar
-	wget http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtest_06-Nov-2007.tar
-	wget http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCdevkit_08-Jun-2007.tar
-	```
+We are not allowed to share the dataset due to privacy restrictions.
+But we're providing the workflow for training on your own dataset and the key files that need to be modified:
 
-2. Extract all of these tars into one directory named `VOCdevkit`
+1. Entry point: a bash script in the experiments directory that specifies some hyperparameters
 
-	```Shell
-	tar xvf VOCtrainval_06-Nov-2007.tar
-	tar xvf VOCtest_06-Nov-2007.tar
-	tar xvf VOCdevkit_08-Jun-2007.tar
-	```
-
-3. It should have this basic structure
-
-	```Shell
-  	$VOCdevkit/                           # development kit
-  	$VOCdevkit/VOCcode/                   # VOC utility code
-  	$VOCdevkit/VOC2007                    # image sets, annotations, etc.
-  	# ... and several other directories ...
-  	```
-
-4. Create symlinks for the PASCAL VOC dataset
-
-	```Shell
-    cd $FRCN_ROOT/data
-    ln -s $VOCdevkit VOCdevkit2007
+    Example:
+    ```Shell
+    $ ./experiments/scripts/socket_scratch_n_1e-4_fg150_roils_end2end.sh 0 VGG16 socket
     ```
-    Using symlinks is a good idea because you will likely want to share the same PASCAL dataset installation between multiple projects.
-5. [Optional] follow similar steps to get PASCAL VOC 2010 and 2012
-6. [Optional] If you want to use COCO, please see some notes under `data/README.md`
-7. Follow the next sections to download pre-trained ImageNet models
 
-### Download pre-trained ImageNet models
+2. Most of the configs files that specifies the caffe solver and network would not be very different but
+you would need to write you own data loader following this file as an example: `lib/datasets/socket.py`.
+The function `gt_roidb()` generates or load a numpy file of the ground truth bounding boxes which you would need to create offline beforehand.
 
-Pre-trained ImageNet models can be downloaded for the three networks described in the paper: ZF and VGG16.
+3. Create symlinks for your dataset
 
-```Shell
-cd $FRCN_ROOT
-./data/scripts/fetch_imagenet_models.sh
-```
-VGG16 comes from the [Caffe Model Zoo](https://github.com/BVLC/caffe/wiki/Model-Zoo), but is provided here for your convenience.
-ZF was trained at MSRA.
+	```Shell
+    cd $ROOT/data
+    ln -s SOURCE_PATH_TO_YOUR_DATA TARGET_PATH
+    ```
 
-### Usage
+### Testing
 
-To train and test a Faster R-CNN detector using the **alternating optimization** algorithm from our NIPS 2015 paper, use `experiments/scripts/faster_rcnn_alt_opt.sh`.
-Output is written underneath `$FRCN_ROOT/output`.
+The following code runs the trained models on the entire test dataset:
 
 ```Shell
-cd $FRCN_ROOT
-./experiments/scripts/faster_rcnn_alt_opt.sh [GPU_ID] [NET] [--set ...]
-# GPU_ID is the GPU you want to train on
-# NET in {ZF, VGG_CNN_M_1024, VGG16} is the network arch to use
-# --set ... allows you to specify fast_rcnn.config options, e.g.
-#   --set EXP_DIR seed_rng1701 RNG_SEED 1701
+./experiments/scripts/test_socket_scratch_n_1e-4_fg150_roils.sh test all 4586 1 16 1
 ```
 
-("alt opt" refers to the alternating optimization training algorithm described in the NIPS paper.)
-
-To train and test a Faster R-CNN detector using the **approximate joint training** method, use `experiments/scripts/faster_rcnn_end2end.sh`.
-Output is written underneath `$FRCN_ROOT/output`.
-
-```Shell
-cd $FRCN_ROOT
-./experiments/scripts/faster_rcnn_end2end.sh [GPU_ID] [NET] [--set ...]
-# GPU_ID is the GPU you want to train on
-# NET in {ZF, VGG_CNN_M_1024, VGG16} is the network arch to use
-# --set ... allows you to specify fast_rcnn.config options, e.g.
-#   --set EXP_DIR seed_rng1701 RNG_SEED 1701
-```
-
-This method trains the RPN module jointly with the Fast R-CNN network, rather than alternating between training the two. It results in faster (~ 1.5x speedup) training times and similar detection accuracy. See these [slides](https://www.dropbox.com/s/xtr4yd4i5e0vw8g/iccv15_tutorial_training_rbg.pdf?dl=0) for more details.
-
-Artifacts generated by the scripts in `tools` are written in this directory.
-
-Trained Fast R-CNN networks are saved under:
-
-```
-output/<experiment directory>/<dataset name>/
-```
-
-Test outputs are saved under:
-
-```
-output/<experiment directory>/<dataset name>/<network snapshot name>/
-```
+For more information, please see the inline documentation in the code.

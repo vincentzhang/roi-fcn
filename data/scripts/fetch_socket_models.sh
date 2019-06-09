@@ -3,9 +3,9 @@
 DIR="$(pwd)"
 echo "Current directory: " $DIR
 
-FILE='vgg16_detect_socket_iter_68800.caffemodel'
-ID='0B7GupvVgwhysMW90RmJmVjNQUGs'
-CHECKSUM=81ad03f85c088839962933442e2ee6da
+FILE='vgg16_acce_fg50_1e-04_iter_42960.caffemodel'
+ID='1BqSKNKfDjRS8xfSqObqGXExcsF_r42ar'
+CHECKSUM=ebb74f273989d40435abfe62edda2f1a
 
 if [ -f "../$FILE" ]; then
   echo "File already exists. Checking md5..."
