@@ -15,6 +15,8 @@ If you find it useful in your research, please consider citing:
 It is largely based on the [Faster R-CNN code](https://github.com/rbgirshick/py-faster-rcnn)
 The key difference is that we add the [ROI convolution layer in caffe](https://github.com/vincentzhang/caffe-roi/tree/73bc351c318402635e7220211740b1d44170d13d)
 
+Code is provided as-is, no updates expected.
+
 ## Contents
 1. [Installation](#installation)
 2. [Demo](#demo)
